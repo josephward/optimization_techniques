@@ -14,8 +14,8 @@ import time
 # Graph variables
 n1 = 100
 n2 = 99
-x1_vect = np.linspace(-10,10,n1)
-x2_vect = np.linspace(-10,10,n2)
+x1_vect = np.linspace(-5,5,n1)
+x2_vect = np.linspace(-5,5,n2)
 
 # Initial value and direction
 init_loc = np.array([0,0])
@@ -47,7 +47,7 @@ def SQ(x):
     return x[0]**2+x[1]**2-1.5*x[0]*x[1]
 
 def SQ_prime(x,p):
-    prime = [2*x[0]-1.5*x[1],2*x[1]-1.5*x[0]]
+    prime = np.array([2*x[0]-1.5*x[1],2*x[1]-1.5*x[0]])
     prime = np.dot(prime,p)
     return prime
 
@@ -58,18 +58,22 @@ def RB(x):
     return (1-x[0])**2+100*(x[1]-x[0]**2)**2
 
 def RB_prime(x,p):
-    prime = [-2*(1-x[0])-400*x[0]*(x[1]-x[0]**2),200*(x[1]-x[0])**2]
+    prime = np.array([(-2*(1-x[0]))-400*x[0]*(x[1]-x[0]**2),200*(x[1]-x[0]**2)])
     prime = np.dot(prime,p)
-    return 0
+    return prime
 
 # Jones
 def J(x):
     global k
     k += 1 #Iterate Count
-    return 0
+    return (1-x[0])**2+(1-x[1])**2+0.5*(2*x[1]-x[0]**2)**2
 
 def J_prime(x,p):
-    return 0
+    prime_x = -2*(1-x[0])-2*x[0]*(2*x[1]-x[0]**2)
+    prime_y = -2*(1-x[1])+2*(2*x[1]-x[0]**2)
+    prime = np.array([prime_x,prime_y])
+    prime = np.dot(prime,p)
+    return prime
 
 # Given a direction, it finds the optimal point along the line
 def linesearch1(f, f_prime, x0, p):
@@ -96,17 +100,16 @@ def bracketing(f, f_prime, x0, p):
         phi2 = f(x0+alpha2*p)
         phi2_prime = f_prime(x0+alpha2*p,p)
 
-        print(x0,alpha2,x0+alpha2*p)
-
         #Does the guess satisify the strong wolfe conditions?
         #If phi is above the line 
         val = u1*alpha2*phi_prime
-        if (phi2 > phi + val or (not first and phi2 > phi1) ):
+        if (phi2 > phi + val or (first == False and phi2 > phi1) ):
             print("Pinpoint1")
             alpha_star = pinpoint(f, f_prime, x0, p, alpha1, alpha2)
             return alpha_star
         
-        if (np.absolute(phi2_prime) <= -u2*phi_prime):
+        print(phi2_prime,-u2*phi_prime)
+        if (np.abs(phi2_prime) <= -u2*phi_prime):
             print("Alpha prime")
             alpha2 = alpha2
             return alpha2
@@ -129,7 +132,6 @@ def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high):
     while True:
         # Recalc values
         alpha_p = (alpha_low + alpha_high)/2
-        print(x0, round(alpha_p,5), p,x0+alpha_p*p,f_prime(x0+alpha_p*p,p)) #Testing
         phip = f(x0+alpha_p*p)
         phip_prime = f_prime(x0+alpha_p*p,p)
 
@@ -181,14 +183,14 @@ def graph_func(f,x_sol,res,alphastar):
 
     # Plot the curve
     plt.figure("Graph Contour Plot")
-    CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),10) #Generate Contours
-    plt.clabel(CS, inline=True, fontsize=10)
+    CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),100,linewidths=2) #Generate Contours
+    # plt.clabel(CS, inline=True, fontsize=10)
     
     #Annotate Graph
     plt.xlabel("x1")
     plt.ylabel("x2")
     plt.grid()
-    # plt.colorbar()
+    plt.colorbar()
 
     # Plot minimum point
     res = minimize(f,init_loc) # Find minimum
@@ -196,7 +198,7 @@ def graph_func(f,x_sol,res,alphastar):
     plt.annotate("Min",[res.x[0],res.x[1]])
 
     # Plot initial point and vector away from it
-    plt.arrow(init_loc[0],init_loc[1],p[0],p[1],head_width=0.25)
+    # plt.arrow(init_loc[0],init_loc[1],p[0],p[1],head_width=0.25)
     plt.plot(init_loc[0],init_loc[1],"bo",) #Initial Point
     plt.annotate("Initial Point",[init_loc[0],init_loc[1]])
 
@@ -235,19 +237,19 @@ def graph_func(f,x_sol,res,alphastar):
 def main():       
     global init_loc, p, phi0, phi0_prime, init_alpha, sigma, u1, u2, k
     
-    # h, SQ, RB, J and the ..._prime functions
-    func = h
-    func_dir = h_prime
+    # h, SQ, RB, J and their ..._prime functions
+    func = J
+    func_dir = J_prime
+    p = np.array([1,-3])
+    init_loc = np.array([0,2])
 
-    p = np.array([-1,1])
-    init_loc = np.array([2,-6])
     # Line Search inputs
     phi0 = func(init_loc)               #Initial Location
-    phi0_prime = func_dir(init_loc,p)     #Initial Gradient
+    phi0_prime = func_dir(init_loc,p)   #Initial Gradient
     init_alpha = 1                      #Initial Step size
-    sigma = 1.5                         #Alpha increase factor                     
+    sigma = 1.5                           #Alpha increase factor                     
     u1 = 10**-4                         #Sufficient decrease factor
-    u2 = .1                             #Sufficient curvature factor
+    u2 = .1                            #Sufficient curvature factor
 
 
     x, res, alphastar = linesearch1(func,func_dir,init_loc,p)
@@ -256,7 +258,6 @@ def main():
     print("Min Value: ",res)
     print("Alpha Star: ", alphastar)
     print("K: ", k)
-
     graph_func(func,x,res,alphastar)
 
 if __name__ == "__main__":
