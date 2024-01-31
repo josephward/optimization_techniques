@@ -62,15 +62,27 @@ def RB_prime(x,p):
     prime = np.dot(prime,p)
     return prime
 
-# Jones
-def J(x):
+# Bean Function
+def bean(x):
     global k
     k += 1 #Iterate Count
     return (1-x[0])**2+(1-x[1])**2+0.5*(2*x[1]-x[0]**2)**2
 
-def J_prime(x,p):
+def bean_prime(x,p):
     prime_x = -2*(1-x[0])-2*x[0]*(2*x[1]-x[0]**2)
     prime_y = -2*(1-x[1])+2*(2*x[1]-x[0]**2)
+    prime = np.array([prime_x,prime_y])
+    prime = np.dot(prime,p)
+    return prime
+
+def J(x):
+    global k
+    k += 1 #Iterate Count
+    return x[0]**4 + x[1]**4 - 4*x[0]**3 - 3*x[1]**3 + 2*x[0]**2 +2*x[0]*x[1]
+
+def J_prime(x,p):
+    prime_x = 4*(x[0]**3) -12*(x[0]**2) +4*x[0] +2*x[1]
+    prime_y = 4*(x[1]**3) -9*x[1]**2 +2*x[0]
     prime = np.array([prime_x,prime_y])
     prime = np.dot(prime,p)
     return prime
@@ -156,25 +168,22 @@ def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high):
         if (phip > phi + u1*alpha_p*phi_prime or phip > phi_low):
             print("Move upper lower", phi_low, phip, phi_high)
             alpha_high = alpha_p
-            if (k > 20): #the nuclear option
-                print("Converged enough")
-                return alpha_p
 
         else:
             # It is close enough based on u2
             if (np.absolute(phip_prime) <= -u2*phi_prime):
-                print("Just right")
+                print("Just right",phi_low, phip, phi_high)
                 alphastar = alpha_p
                 return alphastar
             
             # Need to look further
             elif (phip_prime*(alpha_high-alpha_low)>=0):
-                print("Not between")
+                print("Not between",phi_low, phip, phi_high)
                 alpha_high = alpha_low
 
             # Move up the low value
             alpha_low = alpha_p
-            print("Move lower higher")
+            print("Move lower higher",phi_low, phip, phi_high)
 
 def interpolate(f,f_prime,x0,p,alpha1,alpha2):
     top = (2*alpha1*(f(x0+alpha2*p)-f(x0+alpha1*p)))+f_prime(x0+alpha1*p,p)*(alpha1**2-alpha2**2)
@@ -204,7 +213,7 @@ def only_graph(f,init_loc):
 
     # Plot the curve
     plt.figure("Graph Contour Plot")
-    CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),1000,linewidths=2) #Generate Contours
+    CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),100,linewidths=2) #Generate Contours
     plt.plot(init_loc[0],init_loc[1],"bo",) #Initial Point
     plt.arrow(init_loc[0],init_loc[1],p[0],p[1],head_width=0.25)
     plt.colorbar()
@@ -228,8 +237,8 @@ def graph_func(f,x_sol,res,alphastar):
 
     # Plot the curve
     plt.figure("Graph Contour Plot")
-    CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),5000,linewidths=2) #Generate Contours
-    # plt.clabel(CS, inline=True, fontsize=10)
+    CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),100,linewidths=2) #Generate Contours
+    plt.clabel(CS, inline=True, fontsize=10)
     
     #Annotate Graph
     plt.xlabel("x1")
@@ -335,7 +344,7 @@ def main():
     print("Alpha Star: ", alphastar)
     print("K: ", k)
     # only_graph(func,init_loc)
-    # graph_func(func,x,res,alphastar)
+    graph_func(func,x,res,alphastar)
 
 if __name__ == "__main__":
     # robust_testor()
