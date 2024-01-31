@@ -14,8 +14,8 @@ import time
 # Graph variables
 n1 = 100
 n2 = 99
-x1_vect = np.linspace(-5,5,n1)
-x2_vect = np.linspace(-5,5,n2)
+x1_vect = np.linspace(-10,10,n1)
+x2_vect = np.linspace(-10,10,n2)
 
 # Initial value and direction
 init_loc = np.array([0,0])
@@ -75,6 +75,12 @@ def J_prime(x,p):
     prime = np.dot(prime,p)
     return prime
 
+def func_const(x):
+    xk = [init_loc[0]+p[0],init_loc[1]+p[1]] #y2
+    m = (xk[1]-init_loc[0])/(xk[0]-init_loc[0])
+    return x[1]-init_loc[1]-(x[0]-init_loc[0])*m
+
+
 # Given a direction, it finds the optimal point along the line
 def linesearch1(f, f_prime, x0, p):
     alpha = bracketing(f, f_prime, x0, p)
@@ -96,9 +102,14 @@ def bracketing(f, f_prime, x0, p):
     
     first = True
     while True:
+        time.sleep(0.25)
         #Take a guess
         phi2 = f(x0+alpha2*p)
         phi2_prime = f_prime(x0+alpha2*p,p)
+        print(x0,alpha2,x0+alpha2*p)
+        if (k > 100):
+            print("Failed to converge")
+            return 0
 
         #Does the guess satisify the strong wolfe conditions?
         #If phi is above the line 
@@ -108,13 +119,12 @@ def bracketing(f, f_prime, x0, p):
             alpha_star = pinpoint(f, f_prime, x0, p, alpha1, alpha2)
             return alpha_star
         
-        print(phi2_prime,-u2*phi_prime)
         if (np.abs(phi2_prime) <= -u2*phi_prime):
             print("Alpha prime")
             alpha2 = alpha2
             return alpha2
         
-        elif phi2_prime >= 0:
+        elif (phi2_prime >= 0):
             print("Pinpoint2")
             alpha2 = pinpoint(f, f_prime, x0, p, alpha2, alpha1)
             return alpha2
@@ -129,18 +139,26 @@ def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high):
     phi = f(x0)
     phi_prime = f_prime(x0,p)
     
-    while True:
+    while True:        
         # Recalc values
         alpha_p = (alpha_low + alpha_high)/2
+        # alpha_p = interpolate(f,f_prime,x0,p,alpha_low,alpha_high)
         phip = f(x0+alpha_p*p)
         phip_prime = f_prime(x0+alpha_p*p,p)
 
         phi_low = f(x0+alpha_low*p)
+        phi_high = f(x0+alpha_high*p)
+        
+        # print(np.absolute(phip_prime),-u2*phi_prime,phi_prime)
+        # print(x0+alpha_p*p,phip,phi +u1*alpha_p*phi_prime, phip, phi_low)
         
         # alpha_p is above the line
         if (phip > phi + u1*alpha_p*phi_prime or phip > phi_low):
-            print("Move upper lower")
+            print("Move upper lower", phi_low, phip, phi_high)
             alpha_high = alpha_p
+            if (k > 20): #the nuclear option
+                print("Converged enough")
+                return alpha_p
 
         else:
             # It is close enough based on u2
@@ -158,6 +176,11 @@ def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high):
             alpha_low = alpha_p
             print("Move lower higher")
 
+def interpolate(f,f_prime,x0,p,alpha1,alpha2):
+    top = (2*alpha1*(f(x0+alpha2*p)-f(x0+alpha1*p)))+f_prime(x0+alpha1*p,p)*(alpha1**2-alpha2**2)
+    bottom = 2*(f(x0+alpha2*p)-f(x0+alpha1*p)+f_prime(x0+alpha1*p,p)*(alpha1**2-alpha2**2))
+    alphastar = top/bottom
+    return alphastar
 
 """ To hide uninitialized functions
 
@@ -166,9 +189,7 @@ def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high):
 def change_direction():
     pass
 """
-
-# TODO: Make a plot of equation 4.27
-def graph_func(f,x_sol,res,alphastar):
+def only_graph(f,init_loc):
     global n1,n2
     y_vect = np.zeros([n1,n2])
 
@@ -183,7 +204,31 @@ def graph_func(f,x_sol,res,alphastar):
 
     # Plot the curve
     plt.figure("Graph Contour Plot")
-    CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),100,linewidths=2) #Generate Contours
+    CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),1000,linewidths=2) #Generate Contours
+    plt.plot(init_loc[0],init_loc[1],"bo",) #Initial Point
+    plt.arrow(init_loc[0],init_loc[1],p[0],p[1],head_width=0.25)
+    plt.colorbar()
+    plt.show()
+
+# TODO: Make a plot of equation 4.27
+def graph_func(f,x_sol,res,alphastar):
+    global n1,n2
+    y_vect = np.zeros([n1,n2])
+    const_vect = np.zeros([n1,n2])
+
+    # Generate the height vector
+    for i in range(n1):
+        for j in range(n2):
+            x = [x1_vect[i],x2_vect[j]]
+            y_vect[i,j] = f(x)
+            const_vect[i,j] = func_const(x)
+            
+    
+    # print(res)
+
+    # Plot the curve
+    plt.figure("Graph Contour Plot")
+    CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),5000,linewidths=2) #Generate Contours
     # plt.clabel(CS, inline=True, fontsize=10)
     
     #Annotate Graph
@@ -192,10 +237,15 @@ def graph_func(f,x_sol,res,alphastar):
     plt.grid()
     plt.colorbar()
 
+    # Plot constraint
+    # plt.contour(x1_vect,x2_vect,np.transpose(const_vect),colors=["red"])
+
     # Plot minimum point
-    res = minimize(f,init_loc) # Find minimum
+    rules = [{"type":"eq","fun":func_const}]
+    res = minimize(f,init_loc,constraints=rules) # Find minimum
+    print("Actual Min: ",res.x)
     plt.plot(res.x[0],res.x[1],"r*") #Plot minimum
-    plt.annotate("Min",[res.x[0],res.x[1]])
+    plt.annotate("Scipy Min",[res.x[0],res.x[1]])
 
     # Plot initial point and vector away from it
     # plt.arrow(init_loc[0],init_loc[1],p[0],p[1],head_width=0.25)
@@ -203,11 +253,14 @@ def graph_func(f,x_sol,res,alphastar):
     plt.annotate("Initial Point",[init_loc[0],init_loc[1]])
 
     # Plot results from solver
-    print(x_sol)
     plt.plot(x_sol[0],x_sol[1],"b*")
-    plt.annotate("Min Along Line",[x_sol[0],x_sol[1]])
-    s_ans = x_sol+alphastar*p
-    plt.plot([init_loc[0],s_ans[0]],[init_loc[1],s_ans[1]],"b-")
+    plt.annotate("Line Search Min",[x_sol[0],x_sol[1]])
+    s_ans = x_sol+alphastar*0.5*p
+    s1_ans = init_loc+alphastar*-p
+    print(x_sol,alphastar*p,s_ans,s1_ans)
+    plt.plot([init_loc[0],s_ans[0]],[init_loc[1],s_ans[1]],"b-") #plot pos line
+    plt.plot([init_loc[0],s1_ans[0]],[init_loc[1],s1_ans[1]],"b-") #plot neg line
+    
 
 
     ### TODO: Develop a graph of the slice along p
@@ -234,23 +287,46 @@ def graph_func(f,x_sol,res,alphastar):
 
     plt.show()
 
+# def robust_testor():
+#     func = h
+#     func_dir = h_prime
+    
+#     init_alpha = 1                      #Initial Step size
+#     sigma = 1.5                         #Alpha increase factor                     
+#     u1 = 10**-4                         #Sufficient decrease factor
+#     u2 = .1                             #Sufficient curvature factor
+
+#     for i in range(-1,2): # -1,0,1
+#         for j in range(-1,2):
+#             p = np.array([i,j])
+#             init_loc = np.array([4,4])
+#             # Line Search inputs
+#             phi0 = func(init_loc)               #Initial Location
+#             phi0_prime = func_dir(init_loc,p)   #Initial Gradient
+
+#             print(init_loc,p)
+#             x, res, alphastar = linesearch1(func,func_dir,init_loc,p)
+
+
 def main():       
     global init_loc, p, phi0, phi0_prime, init_alpha, sigma, u1, u2, k
     
     # h, SQ, RB, J and their ..._prime functions
+    # p values  [-1,1]  [1,-3]   [1,2]
+    # x0 values [2,-6]  [0,2]    [1,1]
     func = J
     func_dir = J_prime
-    p = np.array([1,-3])
-    init_loc = np.array([0,2])
+    p = np.array([1,2])
+    init_loc = np.array([1,1])
 
     # Line Search inputs
     phi0 = func(init_loc)               #Initial Location
+    print(phi0)
     phi0_prime = func_dir(init_loc,p)   #Initial Gradient
     init_alpha = 1                      #Initial Step size
     sigma = 1.5                           #Alpha increase factor                     
     u1 = 10**-4                         #Sufficient decrease factor
     u2 = .1                            #Sufficient curvature factor
-
 
     x, res, alphastar = linesearch1(func,func_dir,init_loc,p)
     print("\n\nFunction: ", func)
@@ -258,7 +334,9 @@ def main():
     print("Min Value: ",res)
     print("Alpha Star: ", alphastar)
     print("K: ", k)
-    graph_func(func,x,res,alphastar)
+    # only_graph(func,init_loc)
+    # graph_func(func,x,res,alphastar)
 
 if __name__ == "__main__":
+    # robust_testor()
     main()
