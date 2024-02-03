@@ -75,6 +75,7 @@ def bean_prime(x,p):
     prime = np.dot(prime,p)
     return prime
 
+# Jones Function
 def J(x):
     global k
     k += 1 #Iterate Count
@@ -87,6 +88,7 @@ def J_prime(x,p):
     prime = np.dot(prime,p)
     return prime
 
+# Minimize Constraint
 def func_const(x):
     xk = [init_loc[0]+p[0],init_loc[1]+p[1]] #y2
     m = (xk[1]-init_loc[0])/(xk[0]-init_loc[0])
@@ -113,28 +115,44 @@ def linesearch(f, f_prime, init_loc, search_type,
     Linesearch overload which requires an analytical solution in the form of a function.
 
     Parameters:
-        f (function):           Objective function.
-        f_prime (function):     Analytical solution to objective function.
-        init_loc (list):        N dimensional list of numbers for starting location.
-        search_type(string):    Search direction algorithim selector.
+        f (function):                   Objective function.
+        f_prime (function):             Analytical solution to objective function.
+        init_loc (list):                N dimensional list of numbers for starting location.
+        search_type(string):            Search direction algorithim selector.
 
-        u1 (float):             First Strong Wolfe condition, specifies the line of sufficient decrease.
-        u2 (float):             Second Strong Wolfe condition, specifies tolerance for the sufficient curvature condition.
-        sigma (float):          Specifies change in alpha each bracketing loop.
-        init_alpha (float):     Specifies initial alpha value.
+        u1 (float):                     First Strong Wolfe condition, specifies the line of sufficient decrease.
+        u2 (float):                     Second Strong Wolfe condition, specifies tolerance for the sufficient curvature condition.
+        sigma (float):                  Specifies change in alpha each bracketing loop.
+        init_alpha (float):             Specifies initial alpha value.
 
     Returns:
-        res (float):            Value of optimization.
-        x (list):               N dimensional list of ints of the location.
-        k (int):                Number of objective function calls.
-        search_points (list):   A list of the initial, intermediate, and final points from the search.
+        res (float):                    Value of optimization.
+        x (list):                       N dimensional list of ints of the location.
+        k (int):                        Number of objective function calls.
+        search_points (numpy array):    A list of the initial, intermediate, and final points from the search.
 
-    """
-    if search_type not in SEARCH_DIRECTION_ALG:
+    """        
+    
+    # Build return variables
+    res = float()
+    x = []
+    k = int()
+    search_points = np.array([])
+
+    # Run search direction algorithm
+    if (search_type=="SQ"):
+        pass
+    elif (search_type=="CG"):
+        pass
+    elif (search_type=="QN"):
+        pass
+    else:
         errortext = "Must select one of the following search direction algorithims: 'SD' (Steepest Descent), 'CG' (Conjugate Gradient), or 'QN' (Quasi-Newton)"
         raise ValueError(errortext) #SD, CG, or QN
     
-    
+    # TODO: Do I want k to be a global variable or not?
+    return res, x, k, search_points
+
 def bracketing(f, f_prime, x0, p):
     
     #Calculate initial values
@@ -297,8 +315,6 @@ def graph_func(f,x_sol,res,alphastar):
     plt.plot([init_loc[0],s1_ans[0]],[init_loc[1],s1_ans[1]],"b-") #plot neg line
     
 
-
-    ### TODO: Develop a graph of the slice along p
     # # Plot the subsection in the p direction
     # plt.figure("Subsection")
 
