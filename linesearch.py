@@ -7,9 +7,9 @@ Line Search Algorithm
 
 import numpy as np
 from scipy.optimize import minimize
-from scipy.optimize import approx_fprime
+# from scipy.optimize import approx_fprime
 import matplotlib.pyplot as plt
-import time
+import time #Used for testing
 
 # Graph variables
 n1 = 100
@@ -114,7 +114,7 @@ def bracketing(f, f_prime, x0, p):
     
     first = True
     while True:
-        time.sleep(0.25)
+        # time.sleep(0.25)
         #Take a guess
         phi2 = f(x0+alpha2*p)
         phi2_prime = f_prime(x0+alpha2*p,p)
@@ -191,13 +191,6 @@ def interpolate(f,f_prime,x0,p,alpha1,alpha2):
     alphastar = top/bottom
     return alphastar
 
-""" To hide uninitialized functions
-
-# For Homework 3
-# After minimizing sufficently along a direction, change the direction
-def change_direction():
-    pass
-"""
 def only_graph(f,init_loc):
     global n1,n2
     y_vect = np.zeros([n1,n2])
@@ -238,7 +231,7 @@ def graph_func(f,x_sol,res,alphastar):
     # Plot the curve
     plt.figure("Graph Contour Plot")
     CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),100,linewidths=2) #Generate Contours
-    plt.clabel(CS, inline=True, fontsize=10)
+    # plt.clabel(CS, inline=True, fontsize=10)
     
     #Annotate Graph
     plt.xlabel("x1")
@@ -247,7 +240,7 @@ def graph_func(f,x_sol,res,alphastar):
     plt.colorbar()
 
     # Plot constraint
-    # plt.contour(x1_vect,x2_vect,np.transpose(const_vect),colors=["red"])
+    plt.contour(x1_vect,x2_vect,np.transpose(const_vect),colors=["red"])
 
     # Plot minimum point
     rules = [{"type":"eq","fun":func_const}]
@@ -295,6 +288,10 @@ def graph_func(f,x_sol,res,alphastar):
 
 
     plt.show()
+
+# Graph phi as a function of alpha
+def graph_slice():
+    pass
 
 # def robust_testor():
 #     func = h
