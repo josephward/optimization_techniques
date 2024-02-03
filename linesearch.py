@@ -95,6 +95,7 @@ def func_const(x):
 
 # Given a direction, it finds the optimal point along the line
 def linesearch1(f, f_prime, x0, p):
+    """Linesearch for homework 3"""
     alpha = bracketing(f, f_prime, x0, p)
 
     xf = x0 + alpha*p
@@ -102,6 +103,38 @@ def linesearch1(f, f_prime, x0, p):
 
     return xf, val, alpha
 
+SEARCH_DIRECTION_ALG = {"SD", "CG", "QN"} #Steepest Descent, Conjugate Gradient, Quasi-Newton
+
+def linesearch(f, f_prime, init_loc, search_type, 
+               u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1):
+    """
+    Conducts a line search optimization for the function f, starting at location init_loc, in direction of p.
+    
+    Linesearch overload which requires an analytical solution in the form of a function.
+
+    Parameters:
+        f (function):           Objective function.
+        f_prime (function):     Analytical solution to objective function.
+        init_loc (list):        N dimensional list of numbers for starting location.
+        search_type(string):    Search direction algorithim selector.
+
+        u1 (float):             First Strong Wolfe condition, specifies the line of sufficient decrease.
+        u2 (float):             Second Strong Wolfe condition, specifies tolerance for the sufficient curvature condition.
+        sigma (float):          Specifies change in alpha each bracketing loop.
+        init_alpha (float):     Specifies initial alpha value.
+
+    Returns:
+        res (float):            Value of optimization.
+        x (list):               N dimensional list of ints of the location.
+        k (int):                Number of objective function calls.
+        search_points (list):   A list of the initial, intermediate, and final points from the search.
+
+    """
+    if search_type not in SEARCH_DIRECTION_ALG:
+        errortext = "Must select one of the following search direction algorithims: 'SD' (Steepest Descent), 'CG' (Conjugate Gradient), or 'QN' (Quasi-Newton)"
+        raise ValueError(errortext) #SD, CG, or QN
+    
+    
 def bracketing(f, f_prime, x0, p):
     
     #Calculate initial values
@@ -344,5 +377,5 @@ def main():
     graph_func(func,x,res,alphastar)
 
 if __name__ == "__main__":
-    # robust_testor()
-    main()
+    # main()
+    linesearch(h,h_prime,[1,0],2)
