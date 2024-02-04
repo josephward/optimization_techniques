@@ -17,16 +17,7 @@ n2 = 99
 x1_vect = np.linspace(-10,10,n1)
 x2_vect = np.linspace(-10,10,n2)
 
-# Initial value and direction
-init_loc = np.array([0,0])
-p = np.array([1,1])
-# Line Search inputs
-phi0 = 0                        #Initial Location
-phi0_prime = 0                  #Initial Gradient
-init_alpha = 1                  #Initial Step size
-sigma = 0                       #Alpha increase factor                     
-u1 = 0                          #Sufficient decrease factor
-u2 = 0                          #Sufficient curvature factor
+# Global Variables
 k = 0
 
 # Example objective function
@@ -108,7 +99,7 @@ def linesearch1(f, f_prime, x0, p):
 SEARCH_DIRECTION_ALG = {"SD", "CG", "QN"} #Steepest Descent, Conjugate Gradient, Quasi-Newton
 
 def linesearch(f, f_prime, init_loc, search_type, 
-               u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1):
+               u1=10**-4, u2=10**-2, sigma=1.5, init_alpha=1):
     """
     Conducts a line search optimization for the function f, starting at location init_loc, in direction of p.
     
@@ -135,29 +126,37 @@ def linesearch(f, f_prime, init_loc, search_type,
     
     # Build return variables
     res = float()
-    x = []
+    xf = []
     k = int()
     search_points = np.array([])
+    
+    # p = np.array([1,2])
 
-    # Run search direction algorithm
-    if (search_type=="SQ"):
-        pass
-    elif (search_type=="CG"):
-        pass
-    elif (search_type=="QN"):
-        pass
-    else:
-        errortext = "Must select one of the following search direction algorithims: 'SD' (Steepest Descent), 'CG' (Conjugate Gradient), or 'QN' (Quasi-Newton)"
-        raise ValueError(errortext) #SD, CG, or QN
+    alpha = bracketing(f, f_prime, init_loc, p)
+    xf = init_loc + alpha*p
+    res = f(xf)
+
+    # # Run search direction algorithm
+    # if (search_type=="SQ"):
+    #     pass
+    # elif (search_type=="CG"):
+    #     pass
+    # elif (search_type=="QN"):
+    #     pass
+    # else:
+    #     errortext = "Must select one of the following search direction algorithims: 'SD' (Steepest Descent), 'CG' (Conjugate Gradient), or 'QN' (Quasi-Newton)"
+    #     raise ValueError(errortext) #SD, CG, or QN
     
     # TODO: Do I want k to be a global variable or not?
-    return res, x, k, search_points
+    return res, xf, alpha, k, search_points
+    # return res, res, k, search_points
 
-def bracketing(f, f_prime, x0, p):
+def bracketing(f, f_prime, init_loc, p,
+               u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1):
     
     #Calculate initial values
-    phi = f(x0)
-    phi_prime = f_prime(x0,p)
+    phi = f(init_loc)
+    phi_prime = f_prime(init_loc,p)
     phi1 = phi
     phi1_prime = phi_prime
     alpha1 = 0
@@ -167,9 +166,9 @@ def bracketing(f, f_prime, x0, p):
     while True:
         # time.sleep(0.25)
         #Take a guess
-        phi2 = f(x0+alpha2*p)
-        phi2_prime = f_prime(x0+alpha2*p,p)
-        print(x0,alpha2,x0+alpha2*p)
+        phi2 = f(init_loc+alpha2*p)
+        phi2_prime = f_prime(init_loc+alpha2*p,p)
+        print(init_loc,alpha2,init_loc+alpha2*p)
         if (k > 100):
             print("Failed to converge")
             return 0
@@ -179,7 +178,8 @@ def bracketing(f, f_prime, x0, p):
         val = u1*alpha2*phi_prime
         if (phi2 > phi + val or (first == False and phi2 > phi1) ):
             print("Pinpoint1")
-            alpha_star = pinpoint(f, f_prime, x0, p, alpha1, alpha2)
+            alpha_star = pinpoint(f, f_prime, init_loc, p, alpha1, alpha2, 
+                                  u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1)
             return alpha_star
         
         if (np.abs(phi2_prime) <= -u2*phi_prime):
@@ -189,31 +189,34 @@ def bracketing(f, f_prime, x0, p):
         
         elif (phi2_prime >= 0):
             print("Pinpoint2")
-            alpha2 = pinpoint(f, f_prime, x0, p, alpha2, alpha1)
+            alpha2 = pinpoint(f, f_prime, init_loc, p, alpha2, alpha1, 
+                              u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1)
             return alpha2
 
         else:
             alpha1 = alpha2
             alpha2 = sigma*alpha2
         first = False
+
+def pinpoint(f, f_prime, init_loc, p, alpha_low, alpha_high, 
+             u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1):
     
-def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high):
-    
-    phi = f(x0)
-    phi_prime = f_prime(x0,p)
+    phi = f(init_loc)
+    phi_prime = f_prime(init_loc,p)
     
     while True:        
         # Recalc values
+        # Bisection method or interpolation
         alpha_p = (alpha_low + alpha_high)/2
-        # alpha_p = interpolate(f,f_prime,x0,p,alpha_low,alpha_high)
-        phip = f(x0+alpha_p*p)
-        phip_prime = f_prime(x0+alpha_p*p,p)
+        # alpha_p = interpolate(f,f_prime,init_loc,p,alpha_low,alpha_high)
+        phip = f(init_loc+alpha_p*p)
+        phip_prime = f_prime(init_loc+alpha_p*p,p)
 
-        phi_low = f(x0+alpha_low*p)
-        phi_high = f(x0+alpha_high*p)
+        phi_low = f(init_loc+alpha_low*p)
+        phi_high = f(init_loc+alpha_high*p)
         
         # print(np.absolute(phip_prime),-u2*phi_prime,phi_prime)
-        # print(x0+alpha_p*p,phip,phi +u1*alpha_p*phi_prime, phip, phi_low)
+        # print(init_loc+alpha_p*p,phip,phi +u1*alpha_p*phi_prime, phip, phi_low)
         
         # alpha_p is above the line
         if (phip > phi + u1*alpha_p*phi_prime or phip > phi_low):
@@ -363,35 +366,26 @@ def graph_slice():
 #             x, res, alphastar = linesearch1(func,func_dir,init_loc,p)
 
 
-def main():       
-    global init_loc, p, phi0, phi0_prime, init_alpha, sigma, u1, u2, k
-    
+def main():
+    # Homework 2
     # h, SQ, RB, J and their ..._prime functions
     # p values  [-1,1]  [1,-3]   [1,2]
     # x0 values [2,-6]  [0,2]    [1,1]
-    func = J
-    func_dir = J_prime
-    p = np.array([1,2])
-    init_loc = np.array([1,1])
+    
+    func = RB
+    func_dir = RB_prime
+    init_loc = np.array([0,2])
 
-    # Line Search inputs
-    phi0 = func(init_loc)               #Initial Location
-    print(phi0)
-    phi0_prime = func_dir(init_loc,p)   #Initial Gradient
-    init_alpha = 1                      #Initial Step size
-    sigma = 1.5                           #Alpha increase factor                     
-    u1 = 10**-4                         #Sufficient decrease factor
-    u2 = .1                            #Sufficient curvature factor
+    res, x, alpha, k, _ = linesearch(func,func_dir,init_loc,"Random")
+    print("Res", alpha, x, func)
 
-    x, res, alphastar = linesearch1(func,func_dir,init_loc,p)
-    print("\n\nFunction: ", func)
-    print("Min Location: ",x)
-    print("Min Value: ",res)
-    print("Alpha Star: ", alphastar)
-    print("K: ", k)
-    # only_graph(func,init_loc)
-    graph_func(func,x,res,alphastar)
+    # print("\n\nFunction: ", func)
+    # print("Min Location: ",x)
+    # print("Min Value: ",res)
+    # print("Alpha Star: ", alphastar)
+    # print("K: ", k)
+    # # only_graph(func,init_loc)
+    # graph_func(func,x,res,alphastar)
 
 if __name__ == "__main__":
-    # main()
-    linesearch(h,h_prime,[1,0],2)
+    main()
