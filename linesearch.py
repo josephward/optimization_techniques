@@ -19,7 +19,7 @@ x2_vect = np.linspace(-10,10,n2)
 # Global Variables
 k = 0
 
-# Example objective function
+# Circle Function
 def h(x):
     global k
     k += 1 #Iterate Count
@@ -73,25 +73,9 @@ def J_prime(x):
     prime = np.array([prime_x,prime_y])
     return prime
 
-# Minimize Constraint
-def func_const(x):
-    xk = [init_loc[0]+p[0],init_loc[1]+p[1]] #y2
-    m = (xk[1]-init_loc[0])/(xk[0]-init_loc[0])
-    return x[1]-init_loc[1]-(x[0]-init_loc[0])*m
-
 # Calculate Phi Prime for Prime Functions
 def calc_phiprime(prime,p):
     return np.dot(prime,p)
-
-# Given a direction, it finds the optimal point along the line
-def linesearch1(f, f_prime, x0, p):
-    """Linesearch for homework 3"""
-    alpha = bracketing(f, f_prime, x0, p)
-
-    xf = x0 + alpha*p
-    val = f(xf)
-
-    return xf, val, alpha
 
 SEARCH_DIRECTION_ALG = ["SD", "CG", "QN"] #Steepest Descent, Conjugate Gradient, Quasi-Newton
 
@@ -128,12 +112,6 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-5,
     xf = []
     search_points = np.array([])
     k = 0
-    
-    # # Old implementation
-    # p = np.array([-1,1])
-    # alphastar = bracketing(f, f_prime, init_loc, p)
-    # xf = init_loc + alphastar*p
-    # res = f(xf)
 
     # Run search direction algorithm
     if (search_type=="SD"):
