@@ -21,41 +21,49 @@ k = 0
 
 # Circle Function
 def h(x):
+    """Simple Circle Function"""
     global k
     k += 1 #Iterate Count
     return x[0]**2+x[1]**2
 
 def h_prime(x):
+    """Derivative of Simple Circle Function"""
     prime = [2*x[0],2*x[1]]
     return prime
 
 # Slanted Quadratic
 def SQ(x):
+    """Slanted Quadratic Function - D.1.1"""
     global k
     k += 1 #Iterate Count
     return x[0]**2+x[1]**2-1.5*x[0]*x[1]
 
 def SQ_prime(x):
+    """Derivative of Slanted Quadratic Function - D.1.1"""
     prime = np.array([2*x[0]-1.5*x[1],2*x[1]-1.5*x[0]])
     return prime
 
 # Rosenbrock
 def RB(x):
+    """Rosenbrock Function - D.1.2"""
     global k
     k += 1 #Iterate Count
     return (1-x[0])**2+100*(x[1]-x[0]**2)**2
 
 def RB_prime(x):
+    """Derivative of Rosenbrock Function - D.1.2"""
     prime = np.array([(-2*(1-x[0]))-400*x[0]*(x[1]-x[0]**2),200*(x[1]-x[0]**2)])
     return prime
 
 # Bean Function
 def bean(x):
+    """Bean Function - D.1.3"""
     global k
     k += 1 #Iterate Count
     return (1-x[0])**2+(1-x[1])**2+0.5*(2*x[1]-x[0]**2)**2
 
 def bean_prime(x):
+    """Derivative of Bean Function - D.1.3"""
     prime_x = -2*(1-x[0])-2*x[0]*(2*x[1]-x[0]**2)
     prime_y = -2*(1-x[1])+2*(2*x[1]-x[0]**2)
     prime = np.array([prime_x,prime_y])
@@ -63,11 +71,13 @@ def bean_prime(x):
 
 # Jones Function
 def J(x):
+    """Jones Function - D.1.4"""
     global k
     k += 1 #Iterate Count
     return x[0]**4 + x[1]**4 - 4*x[0]**3 - 3*x[1]**3 + 2*x[0]**2 +2*x[0]*x[1]
 
 def J_prime(x):
+    """Derivative of Jones Function - D.1.4"""
     prime_x = 4*(x[0]**3) -12*(x[0]**2) +4*x[0] +2*x[1]
     prime_y = 4*(x[1]**3) -9*x[1]**2 +2*x[0]
     prime = np.array([prime_x,prime_y])
@@ -75,6 +85,7 @@ def J_prime(x):
 
 # Calculate Phi Prime for Prime Functions
 def calc_phiprime(prime,p):
+    """Calculates Phi value for derivative functions"""
     return np.dot(prime,p)
 
 SEARCH_DIRECTION_ALG = ["SD", "CG", "QN"] #Steepest Descent, Conjugate Gradient, Quasi-Newton
@@ -130,8 +141,6 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-5,
             xk = xk + alpha*p
             #add to search points
 
-            # time.sleep(1)
-
         xf = xk
         res = f(xf)
 
@@ -153,6 +162,25 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-5,
     return res, xf, k, search_points
 
 def bracketing(f, f_prime, x0, p, u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1):
+    """
+    Bracketing algorithm (4.3) which establishes a min and max bound beneath the line of sufficient decrease.
+    Following that, that value is passed to a pinpointing algorithm, the alpha of the location of the minimum is calculated, and returned.
+
+    Parameters:
+        f (function):           Objective Function.
+        f_prime (function):     Analytical derivative of objective function.
+        x0 (list):              Initial location.
+        p (list):               Search direction from search direction.
+
+        u1 (float):             First Strong Wolfe condition, specifies the line of sufficient decrease.
+        u2 (float):             Second Strong Wolfe condition, specifies tolerance for the sufficient curvature condition.
+        sigma (float):          Specifies change in alpha each bracketing loop.
+        init_alpha (float):     Specifies initial alpha value.
+
+    Returns:
+        alphastar (float):      The distance along p from x0 where the minimum is found.
+    """
+
     #Calculate initial values
     phi = f(x0)
     phi_prime = calc_phiprime(f_prime(x0),p)
@@ -163,31 +191,29 @@ def bracketing(f, f_prime, x0, p, u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1)
     
     first = True
     while True:
-        # time.sleep(0.25)
         #Take a guess
         phi2 = f(x0+alpha2*p)
         phi2_prime = calc_phiprime(f_prime(x0+alpha2*p),p)
-        # print(x0,alpha2,x0+alpha2*p)
 
         #Does the guess satisify the strong wolfe conditions?
         #If phi is above the line 
         val = u1*alpha2*phi_prime
         if (phi2 > phi + val or (first == False and phi2 > phi1) ):
             # print("Pinpoint1")
-            alpha_star = pinpoint(f, f_prime, x0, p, alpha1, alpha2, 
+            alphastar = pinpoint(f, f_prime, x0, p, alpha1, alpha2, 
                                   u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1)
-            return alpha_star
+            return alphastar
         
         if (np.abs(phi2_prime) <= -u2*phi_prime):
             # print("Alpha prime")
-            alpha2 = alpha2
-            return alpha2
+            alphastar = alpha2
+            return alphastar
         
         elif (phi2_prime >= 0):
             # print("Pinpoint2")
-            alpha2 = pinpoint(f, f_prime, x0, p, alpha2, alpha1, 
+            alphastar = pinpoint(f, f_prime, x0, p, alpha2, alpha1, 
                               u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1)
-            return alpha2
+            return alphastar
 
         else:
             alpha1 = alpha2
@@ -195,11 +221,30 @@ def bracketing(f, f_prime, x0, p, u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1)
         first = False
 
 def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high, u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1):
+    """
+    Pinpointing algorithm (4.4) to find the local minimum between a bracket. The alpha of that location is returned to the bracketing function.
+
+    Parameters:
+        f (function):           Objective Function.
+        f_prime (function):     Analytical derivative of objective function.
+        x0 (list):              Initial location.
+        p (list):               Search direction from search direction.
+        alpha_low (float):      Lower alpha value.
+        alpha_high (float):     High alpha value.
+
+        u1 (float):             First Strong Wolfe condition, specifies the line of sufficient decrease.
+        u2 (float):             Second Strong Wolfe condition, specifies tolerance for the sufficient curvature condition.
+        sigma (float):          Specifies change in alpha each bracketing loop.
+        init_alpha (float):     Specifies initial alpha value.
+
+    Returns:
+        alphastar (float):      The distance along p from x0 where the minimum is found.
+    """
+
     phi = f(x0)
     phi_prime = calc_phiprime(f_prime(x0),p)
     
     while True:        
-        # time.sleep(0.25)
         # Recalc values
         # Bisection method or interpolation
         alpha_p = (alpha_low + alpha_high)/2
@@ -210,9 +255,6 @@ def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high, u1=10**-4, u2=10**-1, sig
         phi_low = f(x0+alpha_low*p)
         phi_high = f(x0+alpha_high*p)
         
-        # print(np.absolute(phip_prime),-u2*phi_prime,phi_prime)
-        # print(x0+alpha_p*p,phip,phi +u1*alpha_p*phi_prime, phip, phi_low)
-        
         # alpha_p is above the line
         if (phip > phi + u1*alpha_p*phi_prime or phip > phi_low):
             # print("Move upper lower", phi_low, phip, phi_high)
@@ -220,7 +262,6 @@ def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high, u1=10**-4, u2=10**-1, sig
 
         else:
             # It is close enough based on u2
-            # print("Alphastar Cond:", np.absolute(phi_prime), u2*phi_prime)
             if (np.absolute(phip_prime) <= -u2*phi_prime):
                 # print("Just right",phi_low, phip, phi_high)
                 alphastar = alpha_p
