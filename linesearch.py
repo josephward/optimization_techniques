@@ -85,7 +85,7 @@ def J_prime(x):
 
 # Calculate Phi Prime for Prime Functions
 def calc_phiprime(prime,p):
-    """Calculates Phi value for derivative functions"""
+    """Calculates phi value for derivative functions"""
     return np.dot(prime,p)
 
 SEARCH_DIRECTION_ALG = ["SD", "CG", "QN"] #Steepest Descent, Conjugate Gradient, Quasi-Newton
@@ -121,7 +121,7 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-5,
 
     # Build return variables
     xf = []
-    search_points = np.array([])
+    search_points = []
     k = 0
 
     # Run search direction algorithm
@@ -139,7 +139,7 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-5,
             #estimate alpha
             alpha = bracketing(f, f_prime, xk, p, u1, u2, sigma, alpha)
             xk = xk + alpha*p
-            #add to search points
+            search_points.append(xk)
 
         xf = xk
         res = f(xf)
@@ -283,6 +283,7 @@ def interpolate(f,f_prime,x0,p,alpha1,alpha2):
     return alphastar
 
 def only_graph(f,init_loc):
+    """Generates just the graph of the function, inital value, and global minimum."""
     global n1,n2
     y_vect = np.zeros([n1,n2])
 
@@ -292,14 +293,17 @@ def only_graph(f,init_loc):
             x = [x1_vect[i],x2_vect[j]]
             y_vect[i,j] = f(x)
             
-    
-    # print(res)
+    res = minimize(f,init_loc)
 
     # Plot the curve
     plt.figure("Graph Contour Plot")
     CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),100,linewidths=2) #Generate Contours
-    plt.plot(init_loc[0],init_loc[1],"bo",) #Initial Point
-    plt.arrow(init_loc[0],init_loc[1],p[0],p[1],head_width=0.25)
+    #Initial Point
+    plt.plot(init_loc[0],init_loc[1],"bo")
+    plt.annotate("Initial Point",[init_loc[0],init_loc[1]])
+    #Global Min
+    plt.plot(res.x[0],res.x[1],"ro")
+    plt.annotate("Global Min Point",[res.x[0],res.x[1]])
     plt.colorbar()
     plt.show()
 
@@ -390,9 +394,9 @@ def main():
     dir_list    = [SQ_prime,    RB_prime,   J_prime]
     loc_list    = [[2,-6],      [0,2],      [1,1]]
     i = 2
-    res, x, k, _ = linesearch(func_list[i],dir_list[i],loc_list[i],"SD")
+    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],"SD")
 
-    # only_graph(func,init_loc)
+    only_graph(func_list[i],loc_list[i])
     # graph_func(func,x,res,alphastar)
 
 if __name__ == "__main__":
