@@ -390,7 +390,7 @@ def main():
     dir_list    = [SQ_prime,    RB_prime,   J_prime,    bean_prime]
     loc_list    = [[2,-6],      [0,2],      [1,1],      [2,3]]
     i = 3
-    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],"SD")
+    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[0])
 
     graph_linesearch(func_list[i],loc_list[i],points)
     only_graph(func_list[i],loc_list[i])
