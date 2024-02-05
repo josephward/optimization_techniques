@@ -288,8 +288,8 @@ def only_graph(f,init_loc,n1=100,n2=99):
         Graph of objective function, initial location, and global minimum.
     """
 
-    x1_vect = np.linspace(-5,5,n1)
-    x2_vect = np.linspace(-5,5,n2)
+    x1_vect = np.linspace(-10,10,n1)
+    x2_vect = np.linspace(-10,10,n2)
     y_vect = np.zeros([n1,n2])
 
     # Generate the height vector
@@ -346,8 +346,9 @@ def graph_linesearch(f,init_loc,search_points,n1=100,n2=99):
             miny = round(tempy,2)
 
     # Generate the graphing space
-    x1_vect = np.linspace(round(minx,2)-0.1,round(maxx,2)+0.1,n1)
-    x2_vect = np.linspace(round(miny,2)-0.1,round(maxy,2)+0.1,n2)
+    spacing_var = 0.1*(maxx-minx)
+    x1_vect = np.linspace(round(minx,2)-spacing_var,round(maxx,2)+spacing_var,n1)
+    x2_vect = np.linspace(round(miny,2)-spacing_var,round(maxy,2)+spacing_var,n2)
     y_vect = np.zeros([n1,n2])
 
     # Generate the height vector
