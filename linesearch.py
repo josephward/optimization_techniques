@@ -10,12 +10,6 @@ from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 import time #Used for testing
 
-# Graph variables
-n1 = 100
-n2 = 99
-x1_vect = np.linspace(-10,10,n1)
-x2_vect = np.linspace(-10,10,n2)
-
 # Global Variables
 k = 0
 
@@ -128,6 +122,7 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-5,
     if (search_type=="SD"):
         alpha = init_alpha #testing, replace with estimate alpha
         xk = init_loc
+        search_points.append(xk)
         while True:
             # Convergence Condition
             if (np.linalg.norm(f_prime(xk)) < tau):
@@ -158,6 +153,7 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-5,
     print("Min Location: ",xf)
     print("Min Value: ",res)
     print("K: ", k)
+    print("Searchs: ", len(search_points))
 
     return res, xf, k, search_points
 
@@ -282,9 +278,18 @@ def interpolate(f,f_prime,x0,p,alpha1,alpha2):
     alphastar = top/bottom
     return alphastar
 
-def only_graph(f,init_loc):
-    """Generates just the graph of the function, inital value, and global minimum."""
-    global n1,n2
+def only_graph(f,init_loc,n1=100,n2=99):
+    """Generates just the graph of the function, inital value, and global minimum.
+    
+    Parameters:
+        f (function):       Objective Function.
+        init_loc (list):    Initial location, which is graphed.
+    Returns:
+        Graph of objective function, initial location, and global minimum.
+    """
+
+    x1_vect = np.linspace(-5,5,n1)
+    x2_vect = np.linspace(-5,5,n2)
     y_vect = np.zeros([n1,n2])
 
     # Generate the height vector
@@ -305,82 +310,72 @@ def only_graph(f,init_loc):
     plt.plot(res.x[0],res.x[1],"ro")
     plt.annotate("Global Min Point",[res.x[0],res.x[1]])
     plt.colorbar()
-    plt.show()
 
-# TODO: Make a plot of equation 4.27
-def graph_func(f,x_sol,res,alphastar):
-    global n1,n2
+def graph_linesearch(f,init_loc,search_points,n1=100,n2=99):
+    """
+    Graphs the result of the linesearch.
+
+    Parameters:
+        f (function):           Objective function.
+        init_loc (list):        List of coordinates of initial condition.
+        search_points (list):   List of points arrived at during the linesearch
+        
+        n1 (int):               X resolution of graph
+        n2 (int):               Y resolution of graph
+
+    Returns:
+        Graph of linesearch with each substep
+
+    """
+    
+    # Graph down to the dimensions of the linesearch 
+    maxx = 0
+    minx = 999
+    maxy = 0
+    miny = 999
+    for i in range(len(search_points)):
+        tempx = search_points[i][0]
+        tempy = search_points[i][1]
+        if (tempx > maxx):
+            maxx = round(tempx,2)
+        if (tempx < minx):
+            minx = round(tempx,2)
+        if (tempy > maxy):
+            maxy = round(tempy,2)
+        if (tempy < miny):
+            miny = round(tempy,2)
+
+    # Generate the graphing space
+    x1_vect = np.linspace(round(minx,2)-0.1,round(maxx,2)+0.1,n1)
+    x2_vect = np.linspace(round(miny,2)-0.1,round(maxy,2)+0.1,n2)
     y_vect = np.zeros([n1,n2])
-    const_vect = np.zeros([n1,n2])
 
     # Generate the height vector
     for i in range(n1):
         for j in range(n2):
             x = [x1_vect[i],x2_vect[j]]
             y_vect[i,j] = f(x)
-            const_vect[i,j] = func_const(x)
-            
-    
-    # print(res)
 
     # Plot the curve
-    plt.figure("Graph Contour Plot")
-    CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),100,linewidths=2) #Generate Contours
-    # plt.clabel(CS, inline=True, fontsize=10)
-    
-    #Annotate Graph
-    plt.xlabel("x1")
-    plt.ylabel("x2")
-    plt.grid()
-    plt.colorbar()
+    plt.figure("Graph Only Function")
+    CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),25,linewidths=2) #Generate Contours
+    plt.clabel(CS, inline=True, fontsize=10)
 
-    # Plot constraint
-    plt.contour(x1_vect,x2_vect,np.transpose(const_vect),colors=["red"])
-
-    # Plot minimum point
-    rules = [{"type":"eq","fun":func_const}]
-    res = minimize(f,init_loc,constraints=rules) # Find minimum
+    # Plot global min point
+    res = minimize(f,init_loc) # Find minimum
     print("Actual Min: ",res.x)
     plt.plot(res.x[0],res.x[1],"r*") #Plot minimum
     plt.annotate("Scipy Min",[res.x[0],res.x[1]])
 
-    # Plot initial point and vector away from it
-    # plt.arrow(init_loc[0],init_loc[1],p[0],p[1],head_width=0.25)
-    plt.plot(init_loc[0],init_loc[1],"bo",) #Initial Point
-    plt.annotate("Initial Point",[init_loc[0],init_loc[1]])
+    # Plot linesearch values
+    plt.plot()
+    for i in range(len(search_points)-1):
+        plt.plot([search_points[i][0],search_points[i+1][0]],[search_points[i][1],search_points[i+1][1]],"ro-")
 
-    # Plot results from solver
-    plt.plot(x_sol[0],x_sol[1],"b*")
-    plt.annotate("Line Search Min",[x_sol[0],x_sol[1]])
-    s_ans = x_sol+alphastar*0.5*p
-    s1_ans = init_loc+alphastar*-p
-    print(x_sol,alphastar*p,s_ans,s1_ans)
-    plt.plot([init_loc[0],s_ans[0]],[init_loc[1],s_ans[1]],"b-") #plot pos line
-    plt.plot([init_loc[0],s1_ans[0]],[init_loc[1],s1_ans[1]],"b-") #plot neg line
-    
-
-    # # Plot the subsection in the p direction
-    # plt.figure("Subsection")
-
-    # # From -5 to 5, graph the curve along p
-    # sub_x = np.linspace(-5,5,100)
-    # sub_y = []
-
-    # print(len(sub_x),len(sub_y),len(p))
-    # for i in range(len(sub_x)):
-    #     print(sub_x[i]*np.transpose(p[0]),sub_x[i]*np.transpose(p[1]))
-    #     x = [sub_x[i]*np.transpose(p[0]),sub_x[i]*np.transpose(p[1])]
-    #     sub_y.append(f(x))
-
-    # plt.plot(sub_x,sub_y)
-    # plt.plot(init_loc[0],f(init_loc),"bo")
-
-    # plt.xlabel("x")
-    # plt.ylabel("Height")
-    # plt.grid()
-
-
-    plt.show()
+    #Annotate Graph
+    plt.xlabel("x1")
+    plt.ylabel("x2")
+    plt.grid()
 
 # Graph phi as a function of alpha
 def graph_slice():
@@ -396,8 +391,9 @@ def main():
     i = 2
     res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],"SD")
 
+    graph_linesearch(func_list[i],loc_list[i],points)
     only_graph(func_list[i],loc_list[i])
-    # graph_func(func,x,res,alphastar)
+    plt.show()
 
 if __name__ == "__main__":
     main()
