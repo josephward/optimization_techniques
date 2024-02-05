@@ -385,11 +385,11 @@ def graph_slice():
 def main():
 
     #Homework 2 Functions and Initial Values
-    #              0            1           2
-    func_list   = [SQ,          RB,         J]
-    dir_list    = [SQ_prime,    RB_prime,   J_prime]
-    loc_list    = [[2,-6],      [0,2],      [1,1]]
-    i = 2
+    #              0            1           2           3
+    func_list   = [SQ,          RB,         J,          bean]
+    dir_list    = [SQ_prime,    RB_prime,   J_prime,    bean_prime]
+    loc_list    = [[2,-6],      [0,2],      [1,1],      [2,3]]
+    i = 3
     res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],"SD")
 
     graph_linesearch(func_list[i],loc_list[i],points)
