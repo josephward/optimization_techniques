@@ -13,13 +13,14 @@ import time #Used for testing
 # Global Variables
 k = 0
 
+#### Objective Functions
+
 # Circle Function
 def h(x):
     """Simple Circle Function"""
     global k
     k += 1 #Iterate Count
     return x[0]**2+x[1]**2
-
 def h_prime(x):
     """Derivative of Simple Circle Function"""
     prime = [2*x[0],2*x[1]]
@@ -31,7 +32,6 @@ def SQ(x):
     global k
     k += 1 #Iterate Count
     return x[0]**2+x[1]**2-1.5*x[0]*x[1]
-
 def SQ_prime(x):
     """Derivative of Slanted Quadratic Function - D.1.1"""
     prime = np.array([2*x[0]-1.5*x[1],2*x[1]-1.5*x[0]])
@@ -43,7 +43,6 @@ def RB(x):
     global k
     k += 1 #Iterate Count
     return (1-x[0])**2+100*(x[1]-x[0]**2)**2
-
 def RB_prime(x):
     """Derivative of Rosenbrock Function - D.1.2"""
     prime = np.array([(-2*(1-x[0]))-400*x[0]*(x[1]-x[0]**2),200*(x[1]-x[0]**2)])
@@ -55,7 +54,6 @@ def bean(x):
     global k
     k += 1 #Iterate Count
     return (1-x[0])**2+(1-x[1])**2+0.5*(2*x[1]-x[0]**2)**2
-
 def bean_prime(x):
     """Derivative of Bean Function - D.1.3"""
     prime_x = -2*(1-x[0])-2*x[0]*(2*x[1]-x[0]**2)
@@ -69,13 +67,14 @@ def J(x):
     global k
     k += 1 #Iterate Count
     return x[0]**4 + x[1]**4 - 4*x[0]**3 - 3*x[1]**3 + 2*x[0]**2 +2*x[0]*x[1]
-
 def J_prime(x):
     """Derivative of Jones Function - D.1.4"""
     prime_x = 4*(x[0]**3) -12*(x[0]**2) +4*x[0] +2*x[1]
     prime_y = 4*(x[1]**3) -9*x[1]**2 +2*x[0]
     prime = np.array([prime_x,prime_y])
     return prime
+
+#### Calculation and Graphing Functions
 
 # Calculate Phi Prime for Prime Functions
 def calc_phiprime(prime,p):
@@ -125,12 +124,13 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-5,
         search_points.append(xk)
         while True:
             # Convergence Condition
-            if (np.linalg.norm(f_prime(xk)) < tau):
+            spot_prime = f_prime(xk)
+            if (np.linalg.norm(spot_prime) < tau):
                 break
 
-            # print("\nNew Linesearch: Loc", init_loc, "Norm", np.linalg.norm(f_prime(xk)))
+            # print("\nNew Linesearch: Loc", init_loc, "Norm", np.linalg.norm(spot_prime))
             np.append(search_points, xk)
-            p = f_prime(xk)/-np.linalg.norm(f_prime(xk))
+            p = spot_prime/-np.linalg.norm(spot_prime)
             #estimate alpha
             alpha = bracketing(f, f_prime, xk, p, u1, u2, sigma, alpha)
             xk = xk + alpha*p
@@ -138,9 +138,56 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-5,
 
         xf = xk
         res = f(xf)
-
+        
     elif (search_type=="CG"):
-        pass
+        #Set up variables
+        first = True
+        f_grad = float()
+        prior_f_grad = float()
+        p = []
+        prior_p = []
+        xk = init_loc
+        alpha = init_alpha
+        Bk = 0
+
+        while True:
+            np.append(search_points, xk)
+            
+            #Start with steepest descent
+            if (first == True or reset == True):
+                first = False
+                reset = False
+                f_grad = f_prime(xk)
+                #Check tau condition
+                if (np.linalg.norm(f_grad) < tau):
+                    break
+                p = f_grad/-np.linalg.norm(f_grad)
+                prior_p = p
+
+            #Continue with Conjugate Gradient
+            else:
+                prior_f_grad = f_grad
+                f_grad = f_prime(xk)
+                Bk = (f_grad*np.transpose(f_grad))/(prior_f_grad*np.transpose(prior_f_grad))
+                #Check tau condition
+                if (np.linalg.norm(f_grad) < tau):
+                    break
+                prior_p = p
+                p = f_grad/-np.linalg.norm(f_grad) + Bk*prior_p
+
+            alpha = bracketing(f, f_prime, xk, p, u1, u2, sigma, alpha)
+            xk = xk + alpha*p
+            k += 1
+            
+            #Check if time to reset
+            print(f_grad, prior_f_grad)
+            top = np.dot(f_grad,prior_f_grad)
+            bottom = np.dot(f_grad,f_grad)
+            reset_var = np.abs(top/bottom)
+            print(reset_var)
+            if (reset_var >= 0.1):
+                reset = True
+
     elif (search_type=="QN"):
         pass
     else:
@@ -152,8 +199,8 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-5,
     print("\n\nFunction: ", f)
     print("Min Location: ",xf)
     print("Min Value: ",res)
-    print("K: ", k)
-    print("Searchs: ", len(search_points))
+    print("Function Calls: ", k)
+    print("Searches: ", len(search_points))
 
     return res, xf, k, search_points
 
@@ -389,11 +436,11 @@ def main():
     func_list   = [SQ,          RB,         J,          bean]
     dir_list    = [SQ_prime,    RB_prime,   J_prime,    bean_prime]
     loc_list    = [[2,-6],      [0,2],      [1,1],      [2,3]]
-    i = 3
-    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[0])
+    i = 1
+    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[1])
 
     graph_linesearch(func_list[i],loc_list[i],points)
-    only_graph(func_list[i],loc_list[i])
+    # only_graph(func_list[i],loc_list[i])
     plt.show()
 
 if __name__ == "__main__":
