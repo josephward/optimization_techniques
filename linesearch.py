@@ -83,8 +83,10 @@ def calc_phiprime(prime,p):
 
 SEARCH_DIRECTION_ALG = ["SD", "CG", "QN"] #Steepest Descent, Conjugate Gradient, Quasi-Newton
 
-def linesearch(f, f_prime, init_loc, search_type, tau=10**-3,
-               u1=10**-4, u2=.25, sigma=1.8, init_alpha=0.5):
+# def linesearch(f, f_prime, init_loc, search_type, tau=10**-3,
+#                u1=10**-4, u2=.25, sigma=1.8, init_alpha=0.5):
+def linesearch(f, f_prime, init_loc, search_type, tau=10**-2,
+               u1=10**-4, u2=.25, sigma=1.5, init_alpha=1):
     """
     Conducts a line search optimization for the function f, starting at location init_loc, in direction of p.
     
@@ -153,31 +155,25 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-3,
 
         while True:
             search_points.append(xk)
-            
+            if (np.linalg.norm(f_prime(xk),np.inf) <= tau):
+                    # print("break")
+                    break
+            prior_f_grad = f_grad
+            f_grad = f_prime(xk)
+
             #Start with steepest descent
             if (first == True or reset == True):
                 # print("Start First or Reset")
                 first = False
                 reset = False
-                f_grad = f_prime(xk)
-                #Check tau condition
-                if (np.linalg.norm(f_grad,np.inf) <= tau):
-                    # print("break")
-                    break
-                p = f_grad/-np.linalg.norm(f_grad)
                 prior_p = p
+                p = f_grad/-np.linalg.norm(f_grad)
                 # print("First or reset:",xk)
 
             #Continue with Conjugate Gradient
             else:
                 # print("Start Else")
-                prior_f_grad = f_grad
-                f_grad = f_prime(xk)
                 Bk = np.dot(f_grad,f_grad)/np.dot(prior_f_grad,prior_f_grad)
-                #Check tau condition
-                if (np.linalg.norm(f_grad,np.inf) <= tau):
-                    # print("break")
-                    break
                 prior_p = p
                 p = f_grad/-np.linalg.norm(f_grad) + Bk*prior_p
                 # print("Else:",xk)
@@ -196,7 +192,7 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-3,
             first = False
 
             # Nuclear Option
-            print(k)
+            print(len(search_points))
             if (k >= 100000):
                 graph_linesearch(f,init_loc,search_points)
                 plt.show()
@@ -455,23 +451,27 @@ def main():
     func_list   = [SQ,          RB,         J,          bean]
     dir_list    = [SQ_prime,    RB_prime,   J_prime,    bean_prime]
     loc_list    = [[2,-6],      [0,2],      [1,1],      [2,3]]
-    i = 1
+    i = 2
     j = 1
     start_time = time.time()
     res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
     print("Program took:", time.time()-start_time,"sec")
+    graph_linesearch(func_list[i],loc_list[i],points)
     
-    # j = 0
-    # start_time = time.time()
-    # res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
-    # print("Program took:", time.time()-start_time,"sec")
+    # # Rosenbrock
+    # res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j],
+                                #    tau=10**-2, u1=10**-2, u2=.25, sigma=1.5, init_alpha=1)
+
+    j = 0
+    start_time = time.time()
+    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
+    print("Program took:", time.time()-start_time,"sec")
 
     # for i in range(2,len(func_list)):
     #     _,_,_,_ = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
     #     time.sleep(1)
     #     print("\n")
 
-    graph_linesearch(func_list[i],loc_list[i],points)
     # only_graph(func_list[i],loc_list[i])
     plt.show()
 
