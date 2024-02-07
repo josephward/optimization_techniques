@@ -124,12 +124,9 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-2,
         alpha = init_alpha #testing, replace with estimate alpha
         xk = init_loc
         search_points.append(xk)
-        while True:
+        while np.linalg.norm(f_prime(xk),np.inf) > tau:
             # Convergence Condition
             spot_prime = f_prime(xk)
-            if (np.linalg.norm(spot_prime) < tau):
-                break
-
             # print("\nNew Linesearch: Loc", init_loc, "Norm", np.linalg.norm(spot_prime))
             np.append(search_points, xk)
             p = spot_prime/-np.linalg.norm(spot_prime)
@@ -153,11 +150,11 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-2,
         Bk = 0
         reset_var = 0
 
-        while True:
+        while (np.linalg.norm(f_prime(xk),np.inf) > tau):
             search_points.append(xk)
-            if (np.linalg.norm(f_prime(xk),np.inf) <= tau):
-                    # print("break")
-                    break
+            # if (np.linalg.norm(f_prime(xk),np.inf) <= tau):
+            #         # print("break")
+            #         break
             prior_f_grad = f_grad
             f_grad = f_prime(xk)
 
@@ -190,18 +187,12 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-2,
             xk = xk + alpha*p
             k += 1
             first = False
-
-            # Nuclear Option
-            print(len(search_points))
-            if (k >= 100000):
-                graph_linesearch(f,init_loc,search_points)
-                plt.show()
-                break
         
         xf = xk
         res = f(xf)
 
     elif (search_type=="QN"):
+        # while (np.linalg.norm(f_prime(xk),np.inf) > tau):
         pass
     else:
         errortext = "Must select one of the following search direction algorithims: 'SD' (Steepest Descent), 'CG' (Conjugate Gradient), or 'QN' (Quasi-Newton)"
@@ -451,12 +442,19 @@ def main():
     func_list   = [SQ,          RB,         J,          bean]
     dir_list    = [SQ_prime,    RB_prime,   J_prime,    bean_prime]
     loc_list    = [[2,-6],      [0,2],      [1,1],      [2,3]]
-    i = 2
+    i = 0
+    
+    # j = 2
+    # start_time = time.time()
+    # res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
+    # print("Program took:", time.time()-start_time,"sec")
+    # # graph_linesearch(func_list[i],loc_list[i],points)
+
     j = 1
     start_time = time.time()
     res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
     print("Program took:", time.time()-start_time,"sec")
-    graph_linesearch(func_list[i],loc_list[i],points)
+    # graph_linesearch(func_list[i],loc_list[i],points)
     
     # # Rosenbrock
     # res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j],
@@ -473,7 +471,7 @@ def main():
     #     print("\n")
 
     # only_graph(func_list[i],loc_list[i])
-    plt.show()
+    # plt.show()
 
 if __name__ == "__main__":
     main()
