@@ -83,8 +83,8 @@ def calc_phiprime(prime,p):
 
 SEARCH_DIRECTION_ALG = ["SD", "CG", "QN"] #Steepest Descent, Conjugate Gradient, Quasi-Newton
 
-def linesearch(f, f_prime, init_loc, search_type, tau=10**-5,
-               u1=10**-4, u2=10**-2, sigma=1.5, init_alpha=1):
+def linesearch(f, f_prime, init_loc, search_type, tau=10**-3,
+               u1=10**-4, u2=.25, sigma=1.8, init_alpha=0.5):
     """
     Conducts a line search optimization for the function f, starting at location init_loc, in direction of p.
     
@@ -149,44 +149,61 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-5,
         xk = init_loc
         alpha = init_alpha
         Bk = 0
+        reset_var = 0
 
         while True:
-            np.append(search_points, xk)
+            search_points.append(xk)
             
             #Start with steepest descent
             if (first == True or reset == True):
+                # print("Start First or Reset")
                 first = False
                 reset = False
                 f_grad = f_prime(xk)
                 #Check tau condition
-                if (np.linalg.norm(f_grad) < tau):
+                if (np.linalg.norm(f_grad,np.inf) <= tau):
+                    # print("break")
                     break
                 p = f_grad/-np.linalg.norm(f_grad)
                 prior_p = p
+                # print("First or reset:",xk)
 
             #Continue with Conjugate Gradient
             else:
+                # print("Start Else")
                 prior_f_grad = f_grad
                 f_grad = f_prime(xk)
-                Bk = (f_grad*np.transpose(f_grad))/(prior_f_grad*np.transpose(prior_f_grad))
+                Bk = np.dot(f_grad,f_grad)/np.dot(prior_f_grad,prior_f_grad)
                 #Check tau condition
-                if (np.linalg.norm(f_grad) < tau):
+                if (np.linalg.norm(f_grad,np.inf) <= tau):
+                    # print("break")
                     break
                 prior_p = p
                 p = f_grad/-np.linalg.norm(f_grad) + Bk*prior_p
+                # print("Else:",xk)
+            
+            if (first == False and reset_var >= 0.1):
+                #Check if time to reset
+                # print(f_grad, prior_f_grad)
+                reset_var = np.abs(np.dot(f_grad,prior_f_grad)/np.dot(f_grad,f_grad))
+                # print(reset_var)
+                reset = True
 
             alpha = bracketing(f, f_prime, xk, p, u1, u2, sigma, alpha)
+            # print("End B")
             xk = xk + alpha*p
             k += 1
-            
-            #Check if time to reset
-            print(f_grad, prior_f_grad)
-            top = np.dot(f_grad,prior_f_grad)
-            bottom = np.dot(f_grad,f_grad)
-            reset_var = np.abs(top/bottom)
-            print(reset_var)
-            if (reset_var >= 0.1):
-                reset = True
+            first = False
+
+            # Nuclear Option
+            print(k)
+            if (k >= 100000):
+                graph_linesearch(f,init_loc,search_points)
+                plt.show()
+                break
+        
+        xf = xk
+        res = f(xf)
 
     elif (search_type=="QN"):
         pass
@@ -196,15 +213,16 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-5,
     
     # TODO: Do I want k to be a global variable or not?
     
-    print("\n\nFunction: ", f)
-    print("Min Location: ",xf)
-    print("Min Value: ",res)
-    print("Function Calls: ", k)
-    print("Searches: ", len(search_points))
+    print("\n\nFunction:", f)
+    print("Method:", search_type)
+    print("Min Location:",xf)
+    print("Min Value:",res)
+    print("Function Calls:", k)
+    print("Searches:", len(search_points))
 
     return res, xf, k, search_points
 
-def bracketing(f, f_prime, x0, p, u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1):
+def bracketing(f, f_prime, x0, p, u1, u2, sigma, init_alpha):
     """
     Bracketing algorithm (4.3) which establishes a min and max bound beneath the line of sufficient decrease.
     Following that, that value is passed to a pinpointing algorithm, the alpha of the location of the minimum is calculated, and returned.
@@ -263,7 +281,7 @@ def bracketing(f, f_prime, x0, p, u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1)
             alpha2 = sigma*alpha2
         first = False
 
-def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high, u1=10**-4, u2=10**-1, sigma=1.5, init_alpha=1):
+def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high, u1, u2, sigma, init_alpha):
     """
     Pinpointing algorithm (4.4) to find the local minimum between a bracket. The alpha of that location is returned to the bracketing function.
 
@@ -318,6 +336,7 @@ def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high, u1=10**-4, u2=10**-1, sig
             # Move up the low value
             alpha_low = alpha_p
             # print("Move lower higher",phi_low, phip, phi_high)
+            # time.sleep(0.25)
 
 def interpolate(f,f_prime,x0,p,alpha1,alpha2):
     top = (2*alpha1*(f(x0+alpha2*p)-f(x0+alpha1*p)))+calc_phiprime(f_prime(x0+alpha1*p,p)*(alpha1**2-alpha2**2))
@@ -437,7 +456,20 @@ def main():
     dir_list    = [SQ_prime,    RB_prime,   J_prime,    bean_prime]
     loc_list    = [[2,-6],      [0,2],      [1,1],      [2,3]]
     i = 1
-    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[1])
+    j = 1
+    start_time = time.time()
+    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
+    print("Program took:", time.time()-start_time,"sec")
+    
+    # j = 0
+    # start_time = time.time()
+    # res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
+    # print("Program took:", time.time()-start_time,"sec")
+
+    # for i in range(2,len(func_list)):
+    #     _,_,_,_ = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
+    #     time.sleep(1)
+    #     print("\n")
 
     graph_linesearch(func_list[i],loc_list[i],points)
     # only_graph(func_list[i],loc_list[i])
