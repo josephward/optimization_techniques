@@ -85,8 +85,8 @@ SEARCH_DIRECTION_ALG = ["SD", "CG", "QN"] #Steepest Descent, Conjugate Gradient,
 
 # def linesearch(f, f_prime, init_loc, search_type, tau=10**-3,
 #                u1=10**-4, u2=.25, sigma=1.8, init_alpha=0.5):
-def linesearch(f, f_prime, init_loc, search_type, tau=10**-2,
-               u1=10**-4, u2=.25, sigma=1.5, init_alpha=1):
+def linesearch(f, f_prime, init_loc, search_type, tau=10**-3,
+               u1=10**-4, u2=0.5, sigma=1.5, init_alpha=1):
     """
     Conducts a line search optimization for the function f, starting at location init_loc, in direction of p.
     
@@ -148,33 +148,32 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-2,
         p = []
         prior_p = []
         reset = False
+        reset_points = []
 
         while (np.linalg.norm(f_prime(xk),np.inf) > tau):
             search_points.append(xk)
             prior_f_grad = f_grad
             f_grad = f_prime(xk)
+            prior_p = p
 
             #Start with steepest descent
             if (len(search_points) == 1 or reset == True):
                 # print("Start First or Reset")
                 reset = False
-                prior_p = p
                 p = f_grad/-np.linalg.norm(f_grad)
                 # print("First or reset:",xk)
+                reset_points.append(xk)
 
             #Continue with Conjugate Gradient
             else:
                 # print("Start Else")
                 Bk = np.dot(f_grad,f_grad)/np.dot(prior_f_grad,prior_f_grad)
-                prior_p = p
                 p = f_grad/-np.linalg.norm(f_grad) + Bk*prior_p
                 # print("Else:",xk)
             
+            # Check if you need to reset
             reset_var = np.abs(np.dot(f_grad,prior_f_grad)/np.dot(f_grad,f_grad))
             if (len(search_points) > 1 and reset_var >= 0.1):
-                #Check if time to reset
-                # print(f_grad, prior_f_grad)
-                # print(reset_var)
                 reset = True
 
             alpha = bracketing(f, f_prime, xk, p, u1, u2, sigma, alpha)
@@ -183,6 +182,7 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-2,
         
         xf = xk
         res = f(xf)
+        print(search_type,"Reset",len(reset_points))
 
     elif (search_type=="QN"):
         
@@ -192,11 +192,12 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-2,
         n = len(init_loc) # Number of Dimensions
         reset = False
 
-        Vk = np.identity(1)
+        Vk = np.identity(n)
         prior_Vk = np.identity(n)
         f_grad = float()
         prior_f_grad = float()
         search_points = []
+        reset_points = []
 
         while (np.linalg.norm(f_prime(xk),np.inf) > tau):
             search_points.append(xk)
@@ -208,24 +209,27 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-2,
                 reset = False
                 Vk = np.divide(1,np.linalg.norm(f_grad))*np.identity(n)
                 # print("Init",Vk)
+                reset_points.append(xk)
 
             else:
                 s = np.subtract(xk,search_points[-2])
                 y = np.subtract(f_grad,prior_f_grad)
                 o = 1/(np.dot(s,y))
                 Vk = np.subtract(np.identity(n),o*s*np.transpose(y)) * prior_Vk * np.subtract(np.identity(n),o*y*np.transpose(s)) + o*s*np.transpose(s)
+            
+            p = np.dot(-Vk,f_grad)
 
             # Check if you need to reset
             reset_var = np.abs(np.dot(f_grad,prior_f_grad)/np.dot(f_grad,f_grad))
             if (len(search_points) > 1 and reset_var >= 0.1):
                 reset = True
 
-            p = np.dot(-Vk,f_grad)
             alpha = bracketing(f, f_prime, xk, p, u1, u2, sigma, alpha)
             xk = xk + alpha*p
 
         xf = xk
         res = f(xf)
+        print(search_type, "reset",len(reset_points))
 
     else:
         errortext = "Must select one of the following search direction algorithims: 'SD' (Steepest Descent), 'CG' (Conjugate Gradient), or 'QN' (Quasi-Newton)"
@@ -494,7 +498,7 @@ def graph_linesearch(f,init_loc,search_points,n1=100,n2=99):
             y_vect[i,j] = f(x)
 
     # Plot the curve
-    plt.figure("Graph Only Function")
+    # plt.figure("Graph Only Function")
     CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),25,linewidths=2) #Generate Contours
     plt.clabel(CS, inline=True, fontsize=10)
 
@@ -525,25 +529,48 @@ def main():
     func_list   = [SQ,          RB,         J,          bean]
     dir_list    = [SQ_prime,    RB_prime,   J_prime,    bean_prime]
     loc_list    = [[2,-6],      [0,2],      [1,1],      [2,3]]
-    i = 1
+    i = 2
 
     # testing(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[0])
     
+    res_list = []
+
     j = 2
     start_time = time.time()
     res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
-    print("Program took:", time.time()-start_time,"sec")
+    # print("Program took:", time.time()-start_time,"sec")
+    # plt.figure(SEARCH_DIRECTION_ALG[j])
     # graph_linesearch(func_list[i],loc_list[i],points)
 
-    j = 1
-    start_time = time.time()
-    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
-    print("Program took:", time.time()-start_time,"sec")
+    plt.figure(f"Model {SEARCH_DIRECTION_ALG[j]}")
+    x_vect = np.arange(0,len(points),1)
+    print("xvect",len(points))
+    y_vect = []
+    for x in range(len(x_vect)):
+        y_vect.append(np.linalg.norm(func_list[i](points[x])))
 
-    j = 0
-    start_time = time.time()
-    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
-    print("Program took:", time.time()-start_time,"sec")
+    plt.xlabel("Iterations")
+    plt.ylabel("Norm of the Gradient")
+    # plt.yscale('log')
+    plt.plot(x_vect,y_vect)
+
+
+    # res = minimize(func_list[i],loc_list[i])
+    # print("\n\nScipy",res.nfev)
+
+    # j = 1
+    # start_time = time.time()
+    # res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
+    # plt.figure()
+    # graph_linesearch(func_list[i],loc_list[i],points)
+    # print("Program took:", time.time()-start_time,"sec")
+
+    # j = 0
+    # start_time = time.time()
+    # res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
+    # plt.figure()
+    # graph_linesearch(func_list[i],loc_list[i],points)
+    # print("Program took:", time.time()-start_time,"sec")
 
     # # only_graph(func_list[i],loc_list[i])
     plt.show()
