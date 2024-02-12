@@ -9,6 +9,7 @@ import numpy as np
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 import time #Used for testing
+from visualizer import *
 
 # Global Variables
 k = 0
@@ -418,110 +419,6 @@ def interpolate(f,f_prime,x0,p,alpha1,alpha2):
     alphastar = top/bottom
     return alphastar
 
-def only_graph(f,init_loc,n1=100,n2=99):
-    """Generates just the graph of the function, inital value, and global minimum.
-    
-    Parameters:
-        f (function):       Objective Function.
-        init_loc (list):    Initial location, which is graphed.
-    Returns:
-        Graph of objective function, initial location, and global minimum.
-    """
-
-    x1_vect = np.linspace(-10,10,n1)
-    x2_vect = np.linspace(-10,10,n2)
-    y_vect = np.zeros([n1,n2])
-
-    # Generate the height vector
-    for i in range(n1):
-        for j in range(n2):
-            x = [x1_vect[i],x2_vect[j]]
-            y_vect[i,j] = f(x)
-            
-    res = minimize(f,init_loc)
-
-    # Plot the curve
-    plt.figure("Graph Contour Plot")
-    CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),100,linewidths=2) #Generate Contours
-    #Initial Point
-    plt.plot(init_loc[0],init_loc[1],"bo")
-    plt.annotate("Initial Point",[init_loc[0],init_loc[1]])
-    #Global Min
-    plt.plot(res.x[0],res.x[1],"ro")
-    plt.annotate("Global Min Point",[res.x[0],res.x[1]])
-    plt.colorbar()
-
-def graph_linesearch(f,init_loc,search_points,n1=100,n2=99):
-    """
-    Graphs the result of the linesearch.
-
-    Parameters:
-        f (function):           Objective function.
-        init_loc (list):        List of coordinates of initial condition.
-        search_points (list):   List of points arrived at during the linesearch
-        
-        n1 (int):               X resolution of graph
-        n2 (int):               Y resolution of graph
-
-    Returns:
-        Graph of linesearch with each substep
-
-    """
-    
-    # Graph down to the dimensions of the linesearch 
-    maxx = 0
-    minx = 999
-    maxy = 0
-    miny = 999
-    for i in range(len(search_points)):
-        tempx = search_points[i][0]
-        tempy = search_points[i][1]
-        if (tempx > maxx):
-            maxx = round(tempx,2)
-        if (tempx < minx):
-            minx = round(tempx,2)
-        if (tempy > maxy):
-            maxy = round(tempy,2)
-        if (tempy < miny):
-            miny = round(tempy,2)
-
-    # Generate the graphing space
-    spacing_var = 0.1*(maxx-minx)
-    x1_vect = np.linspace(round(minx,2)-spacing_var,round(maxx,2)+spacing_var,n1)
-    x2_vect = np.linspace(round(miny,2)-spacing_var,round(maxy,2)+spacing_var,n2)
-    y_vect = np.zeros([n1,n2])
-
-    # Generate the height vector
-    for i in range(n1):
-        for j in range(n2):
-            x = [x1_vect[i],x2_vect[j]]
-            y_vect[i,j] = f(x)
-
-    # Plot the curve
-    # plt.figure("Graph Only Function")
-    CS = plt.contour(x1_vect,x2_vect,np.transpose(y_vect),25,linewidths=2) #Generate Contours
-    plt.clabel(CS, inline=True, fontsize=10)
-
-    # Plot global min point
-    res = minimize(f,init_loc) # Find minimum
-    print("Actual Min: ",res.x)
-    plt.plot(res.x[0],res.x[1],"r*") #Plot minimum
-    plt.annotate("Scipy Min",[res.x[0],res.x[1]])
-
-    # Plot linesearch values
-    plt.plot()
-    for i in range(len(search_points)-1):
-        plt.plot([search_points[i][0],search_points[i+1][0]],[search_points[i][1],search_points[i+1][1]],"ro-")
-
-    #Annotate Graph
-    plt.xlabel("x1")
-    plt.ylabel("x2")
-    plt.grid()
-
-# Graph phi as a function of alpha
-def graph_slice():
-    pass
-
 def main():
 
     #Homework 2 Functions and Initial Values
@@ -529,51 +426,17 @@ def main():
     func_list   = [SQ,          RB,         J,          bean]
     dir_list    = [SQ_prime,    RB_prime,   J_prime,    bean_prime]
     loc_list    = [[2,-6],      [0,2],      [1,1],      [2,3]]
-    i = 2
 
     # testing(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[0])
     
     res_list = []
 
-    j = 2
-    start_time = time.time()
-    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
-    # print("Program took:", time.time()-start_time,"sec")
-    # plt.figure(SEARCH_DIRECTION_ALG[j])
-    # graph_linesearch(func_list[i],loc_list[i],points)
-
-    plt.figure(f"Model {SEARCH_DIRECTION_ALG[j]}")
-    x_vect = np.arange(0,len(points),1)
-    print("xvect",len(points))
-    y_vect = []
-    for x in range(len(x_vect)):
-        y_vect.append(np.linalg.norm(func_list[i](points[x])))
-
-    plt.xlabel("Iterations")
-    plt.ylabel("Norm of the Gradient")
-    # plt.yscale('log')
-    plt.plot(x_vect,y_vect)
-
-
-    # res = minimize(func_list[i],loc_list[i])
-    # print("\n\nScipy",res.nfev)
-
-    # j = 1
-    # start_time = time.time()
-    # res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
-    # plt.figure()
-    # graph_linesearch(func_list[i],loc_list[i],points)
-    # print("Program took:", time.time()-start_time,"sec")
-
-    # j = 0
-    # start_time = time.time()
-    # res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
-    # plt.figure()
-    # graph_linesearch(func_list[i],loc_list[i],points)
-    # print("Program took:", time.time()-start_time,"sec")
-
-    # # only_graph(func_list[i],loc_list[i])
-    plt.show()
+    j = 0
+    for i in range(len(func_list)):
+        start_time = time.time()
+        res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
+        plot_convergence(dir_list[i],points)
+        plt.show()
 
 if __name__ == "__main__":
     main()
