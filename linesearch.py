@@ -13,9 +13,6 @@ from visualizer import *
 
 # Global Variables
 k = 0
-bracket = 0
-pinpointing = 0
-bisection = 0
 
 #### Objective Functions
 
@@ -224,19 +221,15 @@ def linesearch(f, f_prime, init_loc, search_type, tau=10**-3,
             p = np.dot(-Vk,f_grad)
 
             # Check if you need to reset
-            # reset_var = np.abs(np.dot(f_grad,prior_f_grad)/np.dot(f_grad,f_grad))
-            # if (len(search_points) > 1 and reset_var >= 0.1):
-            #     reset = True
-            #     print(">>Reset<<")
+            reset_var = np.abs(np.dot(f_grad,prior_f_grad)/np.dot(f_grad,f_grad))
+            if (len(search_points) > 1 and reset_var >= 0.1):
+                reset = True
 
-            # if(len(search_points) > 1 and len(search_points)%6 == 0):
+            # if (len(search_points) > 1 and len(search_points)%6 == 0):
             #     reset = True
 
             alpha = bracketing(f, f_prime, xk, p, u1, u2, sigma, alpha)
             xk = xk + alpha*p
-            print(xk)
-            if (k > 5000):
-                tau = 0
 
         xf = xk
         res = f(xf)
@@ -328,10 +321,6 @@ def bracketing(f, f_prime, x0, p, u1, u2, sigma, init_alpha):
     """
 
     #Calculate initial values
-    global bracket 
-    global k
-    bracket += 1
-    print("Bracketing",k)
     phi = f(x0)
     phi_prime = calc_phiprime(f_prime(x0),p)
     phi1 = phi
@@ -339,7 +328,6 @@ def bracketing(f, f_prime, x0, p, u1, u2, sigma, init_alpha):
     alpha1 = 0
     alpha2 = init_alpha
     
-
     first = True
     while True:
         #Take a guess
@@ -350,18 +338,18 @@ def bracketing(f, f_prime, x0, p, u1, u2, sigma, init_alpha):
         #If phi is above the line 
         val = u1*alpha2*phi_prime
         if (phi2 > phi + val or (first == False and phi2 > phi1) ):
-            print("Pinpoint1")
+            # print("Pinpoint1")
             alphastar = pinpoint(f, f_prime, x0, p, alpha1, alpha2, 
                                   u1, u2, sigma, init_alpha)
             return alphastar
         
         if (np.abs(phi2_prime) <= -u2*phi_prime):
-            print("Alpha prime")
+            # print("Alpha prime")
             alphastar = alpha2
             return alphastar
         
         elif (phi2_prime >= 0):
-            print("Pinpoint2")
+            # print("Pinpoint2")
             alphastar = pinpoint(f, f_prime, x0, p, alpha2, alpha1, 
                               u1, u2, sigma, init_alpha)
             return alphastar
@@ -370,11 +358,9 @@ def bracketing(f, f_prime, x0, p, u1, u2, sigma, init_alpha):
             alpha1 = alpha2
             alpha2 = sigma*alpha2
 
-        #nuclear option
-        # if (abs(alpha1-alpha2)<0.00001):
-        #     return alpha2
+        # if (abs(alpha1-alpha2) < 0.00001):
+        #     return alpha1
         first = False
-
 
 def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high, u1, u2, sigma, init_alpha):
     """
@@ -396,10 +382,7 @@ def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high, u1, u2, sigma, init_alpha
     Returns:
         alphastar (float):      The distance along p from x0 where the minimum is found.
     """
-    global pinpointing
-    global bisection
-    pinpointing += 1
-    print(">Pinpointing",k)
+
     phi = f(x0)
     phi_prime = calc_phiprime(f_prime(x0),p)
     
@@ -407,17 +390,7 @@ def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high, u1, u2, sigma, init_alpha
         # Recalc values
         # Bisection method or interpolation
         alpha_p = (alpha_low + alpha_high)/2
-        bisection += 1
-        # print("Bisection",k)
         # alpha_p = interpolate(f,f_prime,x0,p,alpha_low,alpha_high)
-        
-        # #the nuclear option
-        # print(abs(alpha_high - alpha_low))
-        # if (abs(alpha_high - alpha_low) < 0.00001):
-        #     print(alpha_p)
-        #     alphastar = alpha_p
-        #     return alphastar
-
         phip = f(x0+alpha_p*p)
         phip_prime = calc_phiprime(f_prime(x0+alpha_p*p),p)
 
@@ -446,9 +419,12 @@ def pinpoint(f, f_prime, x0, p, alpha_low, alpha_high, u1, u2, sigma, init_alpha
             # print("Move lower higher",phi_low, phip, phi_high)
             # time.sleep(0.25)
 
+        # if (abs(alpha_high-alpha_low) < 0.00001):
+        #     return alpha_p
+
 def interpolate(f,f_prime,x0,p,alpha1,alpha2):
-    top = (2*alpha1*(f(x0+alpha2*p)-f(x0+alpha1*p)))+calc_phiprime(f_prime(x0+alpha1*p)*(alpha1**2-alpha2**2),p)
-    bottom = 2*(f(x0+alpha2*p)-f(x0+alpha1*p)+calc_phiprime(f_prime(x0+alpha1*p)*(alpha1**2-alpha2**2),p))
+    top = (2*alpha1*(f(x0+alpha2*p)-f(x0+alpha1*p)))+calc_phiprime(f_prime(x0+alpha1*p,p)*(alpha1**2-alpha2**2))
+    bottom = 2*(f(x0+alpha2*p)-f(x0+alpha1*p)+calc_phiprime(f_prime(x0+alpha1*p,p)*(alpha1**2-alpha2**2)))
     alphastar = top/bottom
     return alphastar
 
@@ -458,24 +434,17 @@ def main():
     #              0            1           2           3
     func_list   = [SQ,          RB,         J,          bean]
     dir_list    = [SQ_prime,    RB_prime,   J_prime,    bean_prime]
-    loc_list    = [[2,-6],      [-1.2,1],      [1,1],      [-1,2]]
+    loc_list    = [[2,-6],      [0,2],      [1,1],      [2,3]]
 
     # testing(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[0])
     
     res_list = []
-    i = 2
+    i = 1
     j = 2
-    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j],u1=10**-3,u2=0.1,tau=10**-3)
+    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j],tau=10**-4,u1=10**-2,u2=0.5)
     graph_linesearch(func_list[i],loc_list[i],points)
-    print(points[1])
     # plot_convergence(dir_list[i],points)
-    print
     plt.show()
-    # for i in range(len(func_list)):
-    #     start_time = time.time()
-    #     res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j])
-    #     plot_convergence(dir_list[i],points)
-    #     plt.show()
 
 if __name__ == "__main__":
     main()
