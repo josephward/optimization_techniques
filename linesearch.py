@@ -440,8 +440,8 @@ def main():
     
     res_list = []
     i = 1
-    j = 2
-    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j],tau=10**-4,u1=10**-2,u2=0.5)
+    j = 1
+    res, x, k, points = linesearch(func_list[i],dir_list[i],loc_list[i],SEARCH_DIRECTION_ALG[j],tau=10**-4,u1=10**-3,u2=0.5)
     graph_linesearch(func_list[i],loc_list[i],points)
     # plot_convergence(dir_list[i],points)
     plt.show()
