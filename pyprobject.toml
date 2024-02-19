@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "opttechs"
+version = "0.1"
+authors = [
+    {name = "Joseph Ward"},
+]
+description = "Implementation of ME 575 techniques."
+readme = "README.md"
+requires-python = ">=3.12.1"
+classifers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/josephward/optimization_techniques"
