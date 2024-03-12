@@ -3,7 +3,7 @@ import numpy as np
 from scipy.optimize import minimize
     
 
-def graph_function(f,n1=100,n2=99,xlabel="x1",ylabel="x2"):
+def graph_function(f,n1=100,n2=99,xvalue=10, yvalue=10, xlabel="x1",ylabel="x2"):
     """Generates the graph of the function.
 
     Parameters:
@@ -15,8 +15,8 @@ def graph_function(f,n1=100,n2=99,xlabel="x1",ylabel="x2"):
         Graph of objective function, initial location, and global minimum.
     """
 
-    x1_vect = np.linspace(-10,10,n1)
-    x2_vect = np.linspace(-10,10,n2)
+    x1_vect = np.linspace(-xvalue,xvalue,n1)
+    x2_vect = np.linspace(-yvalue,yvalue,n2)
     y_vect = np.zeros([n1,n2])
 
     # Generate the height vector
