@@ -117,6 +117,7 @@ def main():
 
     xstar, k, points, delf = neldermead(f,x0)
     print("NM", xstar, "k", k, "f", f(xstar))
+    
     res1 = minimize(f, x0, method="Nelder-Mead", options={'xatol': 10**-4, 'fatol': 10**-4})
     print("Scipy", res1.x, "k", res1.nit, "f", res1.fun)
 
