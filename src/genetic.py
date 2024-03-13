@@ -6,6 +6,7 @@ By Joseph Ward March 9th 2024
 
 import numpy as np
 from random import randrange, shuffle
+from visualizer import *
 
 # Global Variables
 k = 0 
@@ -57,11 +58,51 @@ def cull(f,P):
     P = newP[0:round(pop/2)] #Make sure that 50% were culled
     return P
 
+def distance(x1,x2):
+    # Application of the distance forumla
+    return np.sqrt((x1[0]-x2[0])**2+(x1[1]-x2[1])**2)
 
-def closeweighted(P):
+def closeweighted(f, P):
     # Selects parents with the greatest values, then based on which parents are the closest to each other
     # Then has kids on a weighted line between them
-    pass
+
+    nextgen = []
+    newP = []
+
+    while len(P) > 1:
+        # Select Parents
+        mother = P[0]
+        father = P[1]
+        id = 1
+        for i in range(2,len(P[2:])):
+            if distance(mother, P[i]) < distance(mother, father):
+                father = P[i]
+                id = i
+        P.pop(id)
+        P.pop(0)
+
+        motherval = f(mother)
+        fatherval = f(father)
+        # Generate perturbance
+        xperturb = np.array([-(np.subtract(father,mother))[1], (np.subtract(father,mother))[0]])
+        yperturb = np.array([-(np.subtract(mother,father))[1], (np.subtract(mother,father))[0]])
+        # Generate kids
+        child1 = mother + 0.75*abs(motherval/(motherval+fatherval))*(np.subtract(father,mother)) + 0.01*randrange(0,10)*xperturb
+        child2 = father + 0.75*abs(fatherval/(motherval+fatherval))*(np.subtract(mother,father)) + 0.01*randrange(0,10)*yperturb
+
+        # Update population
+        newP.extend([mother, father, child1.tolist(), child2.tolist()])
+
+        ## Show the birthing process
+        # plt.figure()
+        # plt.plot(child1[0],child1[1], 'bo')
+        # plt.plot(child2[0],child2[1], 'bo')
+        # plt.plot([father[0], mother[0]], [father[1], mother[1]], 'r-')
+        # plt.plot(father[0],father[1], 'r*')
+        # plt.plot(mother[0],mother[1], 'y*')
+        # plt.show()
+
+    return newP
     
 def greatest(f, P):
     # Selects the parents with the greatest value, then has kids on a line between them.
@@ -76,12 +117,14 @@ def genetic_algorithm(f,n):
     global k
     ## Generate Population
     P = []
+    points = []
     for i in range(n):
         x = [round(randrange(-100,101)*0.1, 1), round(randrange(-100,101)*0.1, 1)]
         P.append(x)
     
     while k < 100:
         print(f"Generation {k}")
+        points.append(P)
         #Evaluate obj function
         tempf = []
         P.sort(key=lambda x: f(x))
@@ -95,7 +138,7 @@ def genetic_algorithm(f,n):
         P = cull(f, P)
 
         # Select parents and generate new generation
-        P = greatest(f, P)
+        P = closeweighted(f, P)
 
         # TESTING
         print("\nPopulation", P)
@@ -115,8 +158,47 @@ def genetic_algorithm(f,n):
         print("\n")
         return 
 
-    pass
+    return
 
 if __name__ == "__main__":
     f = circle
-    genetic_algorithm(f,10)
+    genetic_algorithm(f,20)
+
+    # # Convert to numpy array
+    # mother = np.array([2.,1.])
+    # father = np.array([1.,1.])
+
+    # # Generate Kids
+    # motherval = f(mother)
+    # fatherval = f(father)
+
+    # child1 = mother + 0.75*abs(motherval/(motherval+fatherval))*(father-mother)
+    # child2 = father + 0.75*abs(fatherval/(motherval+fatherval))*(mother-father)
+    # print(child1, child2)
+    # plt.plot(child1[0],child1[1], 'yo')
+    # plt.plot(child2[0],child2[1], 'yo')
+
+    # print("fm",father,mother)
+
+    # xperturb = np.array([-(father-mother)[1], (father-mother)[0]])
+    # yperturb = np.array([-(mother-father)[1], (mother-father)[0]])
+    # print(xperturb,yperturb)
+    
+    # # perturb = [-np.subtract(father,mother)[1], np.subtract(father,mother)[0]]
+    # # perturb = [x * 0.1*randrange(-10,10) for x in perturb]
+    
+    # print("fm",father,mother)
+
+    # child1 = mother + 0.75*abs(motherval/(motherval+fatherval))*(father-mother) + 0.05*randrange(-10,10)*xperturb
+    # child2 = father + 0.75*abs(fatherval/(motherval+fatherval))*(mother-father) - 0.05*randrange(-10,10)*yperturb
+
+    # print(child1,child2,father,mother)
+
+    
+    # plt.ylim(0,3)
+    # plt.xlim(0,3)
+    # plt.plot(child1[0],child1[1], 'bo')
+    # plt.plot(child2[0],child2[1], 'bo')
+    # plt.plot(father[0],father[1], 'r*')
+    # plt.plot(mother[0],mother[1], 'r*')
+    # plt.show()
