@@ -5,11 +5,13 @@ By Joseph Ward March 9th 2024
 """
 
 import numpy as np
-from random import randrange, shuffle
+from random import *
 from visualizer import *
+from time import sleep
 
 # Global Variables
 k = 0 
+seed(10) # Set the seed for testing
 
 def egg_carton(x):
     """Example function to demonstrate function"""
@@ -53,7 +55,6 @@ def cull(f,P):
         tournyP.append(max(P[0:2], key=lambda x: f(x)))
         P = P[2:]
 
-    print(topP, randomP, tournyP)
     newP = topP + randomP + tournyP
     P = newP[0:round(pop/2)] #Make sure that 50% were culled
     return P
@@ -69,7 +70,7 @@ def closeweighted(f, P):
     nextgen = []
     newP = []
 
-    while len(P) > 1:
+    while len(P) > 0:
         # Select Parents
         mother = P[0]
         father = P[1]
@@ -93,7 +94,7 @@ def closeweighted(f, P):
         # Update population
         newP.extend([mother, father, child1.tolist(), child2.tolist()])
 
-        ## Show the birthing process
+        # # Show the birthing process
         # plt.figure()
         # plt.plot(child1[0],child1[1], 'bo')
         # plt.plot(child2[0],child2[1], 'bo')
@@ -108,97 +109,177 @@ def greatest(f, P):
     # Selects the parents with the greatest value, then has kids on a line between them.
     pass
 
-def mutate(P):
+def mutate(P,y=0.01):
     # Slightly mutates the population
-    pass
 
-def genetic_algorithm(f,n):
+    for i in range(len(P)):
+        if randrange(0,100) <= round(100*y):
+            P[i] = [P[i][0]+randrange(-100,101)*0.01,P[i][1]+randrange(-100,101)*0.01]
+            # print("Mutated",i)
+
+    return P
+
+def visualprint(points):
+    for j in range(len(points[0])):
+            print(' '.join(map(str, points[:,j,:].tolist())))
+
+def genetic_algorithm(f,iter=100,n=20):
     """Implementation of the Genetic Algorithm algorithm"""
-    global k
-    ## Generate Population
-    P = []
-    points = []
-    for i in range(n):
-        x = [round(randrange(-100,101)*0.1, 1), round(randrange(-100,101)*0.1, 1)]
-        P.append(x)
+    assert n % 2 == 0, "n must be an even number"
+    assert (n // 2) % 2 == 0, "n divided by 2 must be an even number"
     
-    while k < 100:
-        print(f"Generation {k}")
-        points.append(P)
+    global k
+    ## Generate Population and prepopulate the points
+    P = []
+    points = np.zeros((n, iter, 2))
+    if n % 4 == 0:
+        for i in range(n//4):
+            x = [round(randrange(0,101)*0.1, 1), round(randrange(0,101)*0.1, 1)]
+            P.append(x)
+            x = [round(randrange(0,101)*0.1, 1), round(randrange(-100,1)*0.1, 1)]
+            P.append(x)
+            x = [round(randrange(-100,1)*0.1, 1), round(randrange(0,101)*0.1, 1)]
+            P.append(x)
+            x = [round(randrange(-100,1)*0.1, 1), round(randrange(-100,1)*0.1, 1)]
+            P.append(x)
+    else:
+        for i in range(n):
+            x = [round(randrange(-100,101)*0.1, 1), round(randrange(-100,101)*0.1, 1)]
+            P.append(x)
+
+    while k < iter:
         #Evaluate obj function
         tempf = []
+        for i in range(n):
+            points[i,k] = P[i]
         P.sort(key=lambda x: f(x))
         for i in range(len(P)):
             tempf.append(f(P[i]))
 
-        print("Population", P)
-        print("Func Evals", tempf)
-
         # Cull population
         P = cull(f, P)
-
-        # Select parents and generate new generation
-        P = closeweighted(f, P)
-
-        # TESTING
-        print("\nPopulation", P)
-        tempf = []
-        print(P[0][0])
-        for i in range(len(P)):
-            tempf.append(f(P[i]))
-        print("Func Evals", tempf)
-        # TESTING
-
-        while True: return
 
         # Mutate
         P = mutate(P)
 
-        k += 1
-        print("\n")
-        return 
+        # Select parents and generate new generation
+        P = closeweighted(f, P)
 
+        # # TESTING
+        # print("\nPopulation", P)
+        # tempf = []
+        # for i in range(len(P)):
+        #     tempf.append(f(P[i]))
+        # print("Func Evals", tempf)
+        # # TESTING
+
+        
+        # print("\n")
+        k += 1
+    P.sort(key=lambda x: f(x))
+    return P, points
+
+def main():
+    # f = circle
+    f = egg_carton
+    iter = 100
+    n = 100
+    P, points = genetic_algorithm(f,iter, n) 
+
+    # ### Testing
+    # # Calculate the average point
+    # avg_point = np.mean([point[-1] for point in points], axis=0)
+    # print("Average Point:", avg_point, f.__name__, f(avg_point))
+
+    print("Minimum:", [0,0], f.__name__, f([0,0]))
+
+    # return
+    # ### Testing
+
+    # Graph the function
+    plt.figure("Beginning Points")
+
+    # Plot the beginning points
+    for i in range(len(P)):
+        plt.plot(points[i][0][0], points[i][0][1], "b*") 
+
+    # Plot the countour
+    x1_vect = np.linspace(-10,10,100)
+    x2_vect = np.linspace(-10,10,99)
+    y_vect = np.zeros([100,99])
+
+    # Generate the height vector
+    for i in range(100):
+        for j in range(99):
+            x = [x1_vect[i],x2_vect[j]]
+            y_vect[i,j] = f(x)
+
+    plt.contour(x1_vect,x2_vect,np.transpose(y_vect))
+    plt.colorbar()
+    plt.xlabel("x1")
+    plt.ylabel("x2")
+
+    # Graph the function
+    plt.figure("Last Point")
+
+    # Plot the end points
+    for i in range(len(P)):
+        plt.plot(points[i][-1][0], points[i][-1][1], "r*")
+
+    # Calculate the average point
+    avg_point = np.mean([point[-1] for point in points], axis=0)
+
+    # Plot the average point
+    plt.plot(avg_point[0], avg_point[1], "go")
+    print("Average Point:", avg_point, f.__name__, f(avg_point))
+
+    # Plot the countour
+    x1_vect = np.linspace(-10,10,100)
+    x2_vect = np.linspace(-10,10,99)
+    y_vect = np.zeros([100,99])
+
+    # Generate the height vector
+    for i in range(100):
+        for j in range(99):
+            x = [x1_vect[i],x2_vect[j]]
+            y_vect[i,j] = f(x)
+
+    plt.contour(x1_vect,x2_vect,np.transpose(y_vect))
+    plt.colorbar()
+    plt.xlabel("x1")
+    plt.ylabel("x2")
+
+    plt.show()
+
+    """Plot in a loop"""
+
+    # for j in range(iter):
+    #     # Plot the beginning points
+    #     plt.figure(f.__name__ + " Iteration " + str(j))
+
+    #     for i in range(len(P)):
+    #         if j != 0:
+    #             plt.plot([points[i][j-1][0], points[i][j][0]], [points[i][j-1][1], points[i][j][1]], 'ro')
+    #         plt.plot(points[i][j][0], points[i][j][1], "b*") 
+
+    #     # Plot the countour
+    #     x1_vect = np.linspace(-10,10,100)
+    #     x2_vect = np.linspace(-10,10,99)
+    #     y_vect = np.zeros([100,99])
+
+    #     # Generate the height vector
+    #     for i in range(100):
+    #         for j in range(99):
+    #             x = [x1_vect[i],x2_vect[j]]
+    #             y_vect[i,j] = f(x)
+
+    #     plt.contour(x1_vect,x2_vect,np.transpose(y_vect))
+    #     plt.colorbar()
+    #     plt.xlabel("x1")
+    #     plt.ylabel("x2")
+
+    #     plt.show()
     return
 
 if __name__ == "__main__":
-    f = circle
-    genetic_algorithm(f,20)
-
-    # # Convert to numpy array
-    # mother = np.array([2.,1.])
-    # father = np.array([1.,1.])
-
-    # # Generate Kids
-    # motherval = f(mother)
-    # fatherval = f(father)
-
-    # child1 = mother + 0.75*abs(motherval/(motherval+fatherval))*(father-mother)
-    # child2 = father + 0.75*abs(fatherval/(motherval+fatherval))*(mother-father)
-    # print(child1, child2)
-    # plt.plot(child1[0],child1[1], 'yo')
-    # plt.plot(child2[0],child2[1], 'yo')
-
-    # print("fm",father,mother)
-
-    # xperturb = np.array([-(father-mother)[1], (father-mother)[0]])
-    # yperturb = np.array([-(mother-father)[1], (mother-father)[0]])
-    # print(xperturb,yperturb)
-    
-    # # perturb = [-np.subtract(father,mother)[1], np.subtract(father,mother)[0]]
-    # # perturb = [x * 0.1*randrange(-10,10) for x in perturb]
-    
-    # print("fm",father,mother)
-
-    # child1 = mother + 0.75*abs(motherval/(motherval+fatherval))*(father-mother) + 0.05*randrange(-10,10)*xperturb
-    # child2 = father + 0.75*abs(fatherval/(motherval+fatherval))*(mother-father) - 0.05*randrange(-10,10)*yperturb
-
-    # print(child1,child2,father,mother)
-
-    
-    # plt.ylim(0,3)
-    # plt.xlim(0,3)
-    # plt.plot(child1[0],child1[1], 'bo')
-    # plt.plot(child2[0],child2[1], 'bo')
-    # plt.plot(father[0],father[1], 'r*')
-    # plt.plot(mother[0],mother[1], 'r*')
-    # plt.show()
+    main()
