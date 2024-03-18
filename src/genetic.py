@@ -11,7 +11,7 @@ from time import sleep
 
 # Global Variables
 k = 0 
-seed(10) # Set the seed for testing
+seed(20) # Set the seed for testing
 
 def egg_carton(x):
     """Example function to demonstrate function"""
@@ -19,6 +19,11 @@ def egg_carton(x):
 
 def circle(x):
     return x[0]**2+x[1]**2
+
+# Rosenbrock Function
+def RB(x):
+    """Rosenbrock Function - D.1.2"""
+    return (1-x[0])**2+100*(x[1]-x[0]**2)**2
 
 def cull(f,P):
     """ 
@@ -56,6 +61,7 @@ def cull(f,P):
         P = P[2:]
 
     newP = topP + randomP + tournyP
+    # newP = randomP + tournyP
     P = newP[0:round(pop/2)] #Make sure that 50% were culled
     return P
 
@@ -109,7 +115,7 @@ def greatest(f, P):
     # Selects the parents with the greatest value, then has kids on a line between them.
     pass
 
-def mutate(P,y=0.01):
+def mutate(P,y):
     # Slightly mutates the population
 
     for i in range(len(P)):
@@ -123,7 +129,7 @@ def visualprint(points):
     for j in range(len(points[0])):
             print(' '.join(map(str, points[:,j,:].tolist())))
 
-def genetic_algorithm(f,iter=100,n=20):
+def genetic_algorithm(f,iter=100,n=20,y=0.01):
     """Implementation of the Genetic Algorithm algorithm"""
     assert n % 2 == 0, "n must be an even number"
     assert (n // 2) % 2 == 0, "n divided by 2 must be an even number"
@@ -148,6 +154,7 @@ def genetic_algorithm(f,iter=100,n=20):
             P.append(x)
 
     while k < iter:
+        print(k, "/", iter)
         #Evaluate obj function
         tempf = []
         for i in range(n):
@@ -160,7 +167,7 @@ def genetic_algorithm(f,iter=100,n=20):
         P = cull(f, P)
 
         # Mutate
-        P = mutate(P)
+        P = mutate(P,y)
 
         # Select parents and generate new generation
         P = closeweighted(f, P)
@@ -181,17 +188,15 @@ def genetic_algorithm(f,iter=100,n=20):
 
 def main():
     # f = circle
-    f = egg_carton
+    # f = egg_carton
+    f = RB
     iter = 100
-    n = 100
-    P, points = genetic_algorithm(f,iter, n) 
+    n = 20000
+    y = 0.01
+    P, points = genetic_algorithm(f,iter, n, y) 
 
-    # ### Testing
-    # # Calculate the average point
-    # avg_point = np.mean([point[-1] for point in points], axis=0)
-    # print("Average Point:", avg_point, f.__name__, f(avg_point))
-
-    print("Minimum:", [0,0], f.__name__, f([0,0]))
+    print(f.__name__)
+    print("Abs Minimum:", [1,1], f([1,1]))
 
     # return
     # ### Testing
@@ -231,7 +236,7 @@ def main():
 
     # Plot the average point
     plt.plot(avg_point[0], avg_point[1], "go")
-    print("Average Point:", avg_point, f.__name__, f(avg_point))
+    print("My Average Point:", avg_point, f(avg_point))
 
     # Plot the countour
     x1_vect = np.linspace(-10,10,100)
@@ -249,7 +254,7 @@ def main():
     plt.xlabel("x1")
     plt.ylabel("x2")
 
-    plt.show()
+    # plt.show()
 
     """Plot in a loop"""
 
